@@ -9,6 +9,7 @@ The project relies on PostgreSQL as the database management system. If you haven
   1. Visit the PostgreSQL Downloads page: https://www.postgresql.org/download/
   2. Choose the appropriate installer for your operating system.
   3. Follow the installation instructions provided for your platform.
+  4. Open your PostgreSQL shell and create a database for this project. (E.g., `CREATE DATABASE nutrition;`)
 
 ### Setting up Environment Variables with .env
 
@@ -18,8 +19,8 @@ To manage sensitive information like database credentials and other configuratio
 
 You will need python-decouple and psycopg2. They should install automatically via the requirements.txt file if you are using a virtual environment. Otherwise install manually:
 
-pip install python-decouple
-pip install psydopg2
+- `pip install python-decouple`
+- `pip install psydopg2`
 
 #### Step 2: Create a New .env File
 
@@ -47,11 +48,12 @@ If any of the configuration values change (e.g., database credentials), update t
 - Never share your .env file publicly or commit it to version control. It contains sensitive information.
 - Ensure that each team member creates their own .env file with their specific credentials.
 
-### Perform Migrations and Create Admin Account
+### Perform Migrations, Create Admin Account, Run Server
 
 Run the following commands from the project root directory to create and apply migrations to your local PostgreSQL database:
-python manage.py makemigrations (only required if you have modified a model)
-python manage.py migrate
+`python manage.py makemigrations` (only required if you have modified a model)
+`python manage.py migrate`
 
-Run this command to create a superuser account to access the admin interface at http://localhost:8000/admin/:
-python manage.py createsuperuser
+Run `python manage.py createsuperuser` to create a superuser account.
+Run `python manage.py runserver` to start a local server.
+Access the admin interface at http://localhost:8000/admin/

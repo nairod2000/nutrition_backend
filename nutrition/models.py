@@ -1,12 +1,16 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 # Create your models here.
+'''
 class Users(models.Model):
     id = models.AutoField(primary_key=True)
     userName = models.CharField(max_length=50)
     password = models.CharField(max_length=50)
     email = models.CharField(max_length=50)
     joinedOn = models.DateTimeField(auto_now_add=True)
+'''
 
 class FoodItem(models.Model):
     id = models.AutoField(primary_key=True)
@@ -36,17 +40,27 @@ class Mineral(models.Model):
 
 class CombinedItem(models.Model):
     id = models.AutoField(primary_key=True)
-    userId = models.ForeignKey(Users, on_delete=models.CASCADE)
+    userId = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
 
 class Consumed(models.Model):
     id = models.AutoField(primary_key=True)
-    userId = models.ForeignKey(Users, on_delete=models.CASCADE)
-    foodId = models.ForeignKey(FoodItem, on_delete=models.CASCADE)
-    supplementId = models.ForeignKey(Supplement, on_delete=models.CASCADE)
-    combinedItemId = models.ForeignKey(CombinedItem, on_delete=models.CASCADE)
+    userId = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    foodId = models.ForeignKey(FoodItem, on_delete=models.CASCADE, null=True, blank=True)
+    supplementId = models.ForeignKey(Supplement, on_delete=models.CASCADE, null=True, blank=True)
+    combinedItemId = models.ForeignKey(CombinedItem, on_delete=models.CASCADE, null=True, blank=True)
     consumedAt = models.DateTimeField(auto_now_add=True)
     portion = models.IntegerField()
+
+    def clean(self):
+        # Ensure that at least one of user_id, food_id, supplement_id, or combined_item_id is populated.
+        if (
+            not self.userId and
+            not self.foodId and
+            not self.supplementId and
+            not self.combinedItemId
+        ):
+            raise ValidationError("At least one of userId, foodId, supplementId, or combinedItemId must be populated.")
 
 class CombinedFoodElement(models.Model):
     id = models.AutoField(primary_key=True)
