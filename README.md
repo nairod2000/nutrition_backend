@@ -31,11 +31,11 @@ You will need python-decouple and psycopg2. They should install automatically vi
 
 Open the .env file you created and add the following lines:
 
-DB_NAME=my_database_name
-DB_USER=my_database_user
-DB_PASSWORD=my_database_password
-DB_HOST=my_database_host
-DB_PORT=my_database_port
+`DB_NAME=my_database_name`
+`DB_USER=my_database_user`
+`DB_PASSWORD=my_database_password`
+`DB_HOST=my_database_host`
+`DB_PORT=my_database_port`
 
 Replace the placeholders (my_database_name, my_database_user, etc.) with your actual database credentials and configurations.
 

@@ -2,15 +2,9 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-# Create your models here.
-'''
-class Users(models.Model):
+class Unit(models.Model):
     id = models.AutoField(primary_key=True)
-    userName = models.CharField(max_length=50)
-    password = models.CharField(max_length=50)
-    email = models.CharField(max_length=50)
-    joinedOn = models.DateTimeField(auto_now_add=True)
-'''
+    name = models.CharField(max_length=50, unique=True)
 
 class FoodItem(models.Model):
     id = models.AutoField(primary_key=True)
@@ -20,7 +14,7 @@ class FoodItem(models.Model):
     protein = models.IntegerField()
     carbs = models.IntegerField()
     fats = models.IntegerField()
-    unit = models.CharField(max_length=50)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     servingSize = models.IntegerField()
 
 class Supplement(models.Model):
@@ -31,7 +25,7 @@ class Supplement(models.Model):
 class Vitamin(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50)
-    unit = models.CharField(max_length=50)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
 class Mineral(models.Model):
     id = models.AutoField(primary_key=True)
@@ -45,7 +39,7 @@ class CombinedItem(models.Model):
 
 class Consumed(models.Model):
     id = models.AutoField(primary_key=True)
-    userId = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    userId = models.ForeignKey(User, on_delete=models.CASCADE)
     foodId = models.ForeignKey(FoodItem, on_delete=models.CASCADE, null=True, blank=True)
     supplementId = models.ForeignKey(Supplement, on_delete=models.CASCADE, null=True, blank=True)
     combinedItemId = models.ForeignKey(CombinedItem, on_delete=models.CASCADE, null=True, blank=True)
@@ -53,20 +47,28 @@ class Consumed(models.Model):
     portion = models.IntegerField()
 
     def clean(self):
-        # Ensure that at least one of user_id, food_id, supplement_id, or combined_item_id is populated.
+        # Ensure that at least one of foodId, supplementId, or combinedItemId is populated.
         if (
-            not self.userId and
             not self.foodId and
             not self.supplementId and
             not self.combinedItemId
         ):
-            raise ValidationError("At least one of userId, foodId, supplementId, or combinedItemId must be populated.")
+            raise ValidationError("At least one of foodId, supplementId, or combinedItemId must be populated.")
 
-class CombinedFoodElement(models.Model):
+class CombinedItemElement(models.Model):
     id = models.AutoField(primary_key=True)
     combinedFoodId = models.ForeignKey(CombinedItem, on_delete=models.CASCADE)
-    foodId = models.ForeignKey(FoodItem, on_delete=models.CASCADE)
+    foodId = models.ForeignKey(FoodItem, on_delete=models.CASCADE, null=True, blank=True)
+    supplementId = models.ForeignKey(Supplement, on_delete=models.CASCADE, null=True, blank=True)
     servingSize = models.IntegerField()
+
+    def clean(self):
+        # Ensure that at least one of foodId or supplementId is populated.
+        if (
+            not self.foodId and
+            not self.supplementId
+        ):
+            raise ValidationError("At least one of foodId or supplementId must be populated.")
 
 class FoodVitamin(models.Model):
     id = models.AutoField(primary_key=True)

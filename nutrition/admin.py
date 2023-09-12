@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
-from .models import FoodItem, Supplement, Vitamin, Mineral, CombinedItem, Consumed, CombinedFoodElement, FoodVitamin, FoodMineral, SupplementVitamin, SupplementMineral, SupplementIngredient
+from .models import Unit, FoodItem, Supplement, Vitamin, Mineral, CombinedItem, Consumed, CombinedItemElement, FoodVitamin, FoodMineral, SupplementVitamin, SupplementMineral, SupplementIngredient
 
 class FoodVitaminInline(admin.StackedInline):
     model = FoodVitamin
@@ -17,14 +17,12 @@ class SupplementMineralInline(admin.StackedInline):
 class SupplementIngredientInline(admin.StackedInline):
     model = SupplementIngredient
 
-class CombinedFoodElementInline(admin.StackedInline):
-    model = CombinedFoodElement
+class CombinedItemElementInline(admin.StackedInline):
+    model = CombinedItemElement
 
-'''
-@admin.register(Users)
-class UsersAdmin(admin.ModelAdmin):
-    list_display = ('id', 'userName', 'email', 'joinedOn')
-'''
+@admin.register(Unit)
+class UnitAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
 
 @admin.register(FoodItem)
 class FoodItemAdmin(admin.ModelAdmin):
@@ -47,13 +45,13 @@ class MineralAdmin(admin.ModelAdmin):
 @admin.register(CombinedItem)
 class CombinedItemAdmin(admin.ModelAdmin):
     list_display = ('id', 'userId', 'name')
-    inlines = [CombinedFoodElementInline]
+    inlines = [CombinedItemElementInline]
 
 @admin.register(Consumed)
 class ConsumedAdmin(admin.ModelAdmin):
     list_display = ('id', 'userId', 'foodId', 'supplementId', 'combinedItemId', 'consumedAt', 'portion')
 
-@admin.register(CombinedFoodElement)
+@admin.register(CombinedItemElement)
 class CombinedFoodElementAdmin(admin.ModelAdmin):
     list_display = ('id', 'combinedFoodId', 'foodId', 'servingSize')
 
