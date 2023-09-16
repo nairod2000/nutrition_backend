@@ -1,46 +1,35 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
-from .models import Unit, FoodItem, Supplement, Vitamin, Mineral, CombinedItem, Consumed, CombinedItemElement, FoodVitamin, FoodMineral, SupplementVitamin, SupplementMineral, SupplementIngredient
+from .models import Unit, Nutrient, Item, ServingSize, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal
 
-class FoodVitaminInline(admin.StackedInline):
-    model = FoodVitamin
+class ItemNutrientInline(admin.TabularInline):
+    model = ItemNutrient
 
-class FoodMineralInline(admin.StackedInline):
-    model = FoodMineral
+class ItemBioactiveInline(admin.TabularInline):
+    model = ItemBioactive
 
-class SupplementVitaminInline(admin.StackedInline):
-    model = SupplementVitamin
-
-class SupplementMineralInline(admin.StackedInline):
-    model = SupplementMineral
-
-class SupplementIngredientInline(admin.StackedInline):
-    model = SupplementIngredient
-
-class CombinedItemElementInline(admin.StackedInline):
+class CombinedItemElementInline(admin.TabularInline):
     model = CombinedItemElement
+
+class ConsumedInline(admin.TabularInline):
+    model = Consumed
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
 
-@admin.register(FoodItem)
-class FoodItemAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'barcode', 'calories', 'protein', 'carbs', 'fats', 'unit', 'servingSize')
-    inlines = [FoodVitaminInline, FoodMineralInline]
+@admin.register(ServingSize)
+class ServingSizeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'amount', 'unit')
 
-@admin.register(Supplement)
-class SupplementAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'barcode')
-    inlines = [SupplementVitaminInline, SupplementMineralInline, SupplementIngredientInline]
+@admin.register(Nutrient)
+class NutrientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'unit', 'isCategory', 'parentNutrient')
 
-@admin.register(Vitamin)
-class VitaminAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'unit')
-
-@admin.register(Mineral)
-class MineralAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'unit')
+@admin.register(Item)
+class ItemAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'barcode', 'servingSize')
+    inlines = [ItemNutrientInline, ItemBioactiveInline]
 
 @admin.register(CombinedItem)
 class CombinedItemAdmin(admin.ModelAdmin):
@@ -49,28 +38,28 @@ class CombinedItemAdmin(admin.ModelAdmin):
 
 @admin.register(Consumed)
 class ConsumedAdmin(admin.ModelAdmin):
-    list_display = ('id', 'userId', 'foodId', 'supplementId', 'combinedItemId', 'consumedAt', 'portion')
+    list_display = ('id', 'userId', 'itemId', 'combinedItemId', 'consumedAt', 'portion')
 
 @admin.register(CombinedItemElement)
-class CombinedFoodElementAdmin(admin.ModelAdmin):
-    list_display = ('id', 'combinedFoodId', 'foodId', 'servingSize')
+class CombinedItemElementAdmin(admin.ModelAdmin):
+    list_display = ('id', 'combinedItemId', 'itemId', 'servingSize')
 
-@admin.register(FoodVitamin)
-class FoodVitaminAdmin(admin.ModelAdmin):
-    list_display = ('id', 'foodId', 'vitaminId', 'amount')
+@admin.register(ItemNutrient)
+class ItemNutrientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'itemId', 'nutrientId', 'amount')
 
-@admin.register(FoodMineral)
-class FoodMineralAdmin(admin.ModelAdmin):
-    list_display = ('id', 'foodId', 'mineralId', 'amount')
+@admin.register(ItemBioactive)
+class ItemBioactiveAdmin(admin.ModelAdmin):
+    list_display = ('id', 'itemId', 'name', 'amount', 'unit')
 
-@admin.register(SupplementVitamin)
-class SupplementVitaminAdmin(admin.ModelAdmin):
-    list_display = ('id', 'supplementId', 'vitaminId', 'amount')
+@admin.register(NutritionalGoalTemplate)
+class NutritionalGoalTemplateAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
 
-@admin.register(SupplementMineral)
-class SupplementMineralAdmin(admin.ModelAdmin):
-    list_display = ('id', 'supplementId', 'mineralId', 'amount')
+@admin.register(GoalTemplateNutrient)
+class GoalTemplateNutrientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nutrient', 'template', 'recommendedValue')
 
-@admin.register(SupplementIngredient)
-class SupplementIngredientAdmin(admin.ModelAdmin):
-    list_display = ('id', 'supplementId', 'foodId', 'amount', 'unit')
+@admin.register(UserNutritionalGoal)
+class UserNutritionalGoalAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'template')
