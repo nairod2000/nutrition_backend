@@ -66,18 +66,31 @@ class Consumed(models.Model):
         # Ensure that only one of itemId or combinedItemId is populated.
         if self.itemId and self.combinedItemId:
             raise ValidationError("Only one of itemId or combinedItemId should be populated.")
+        
+    def __str__(self):
+        if self.itemId:
+            return f"Consumed: {self.itemId.name} by User: {self.userId.username}"
+        elif self.combinedItemId:
+            return f"Consumed: {self.combinedItemId.name} by User: {self.userId.username}"
     
 class CombinedItemElement(models.Model):
     # Represents an item that is part of a combined item.
     combinedItemId = models.ForeignKey(CombinedItem, on_delete=models.CASCADE)
-    itemId = models.ForeignKey(Item, on_delete=models.CASCADE, null=True, blank=True)
-    servingSize = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0.01)])
+    itemId = models.ForeignKey(Item, on_delete=models.CASCADE)
+    servingSize = models.ForeignKey(ServingSize, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Element: {self.itemId.name} in Combined Item: {self.combinedItemId.name}"
 
 class ItemNutrient(models.Model):
     # Links an item to a nutrient and specifies the amount of that nutrient in the item.
     itemId = models.ForeignKey(Item, on_delete=models.CASCADE)
     nutrientId = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
+
+    def __str__(self):
+        return f"{self.itemId.name} - {self.nutrientId.name}"
+
 
 class ItemBioactive(models.Model):
     # Represents a bioactive compound in an item.
@@ -88,3 +101,28 @@ class ItemBioactive(models.Model):
 
     def __str__(self):
         return self.name
+
+class NutritionalGoalTemplate(models.Model):
+    # Represents a template for a nutritional goal, such as fda recommended daily values or weight loss or gain.
+    name = models.CharField(max_length=50)
+    nutrients = models.ManyToManyField(Nutrient, through='GoalTemplateNutrient')
+
+    def __str__(self):
+        return self.name
+    
+class GoalTemplateNutrient(models.Model):
+    # Links a nutrient to a nutritional goal template and specifies the recommended value for that nutrient.
+    nutrient = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
+    template = models.ForeignKey(NutritionalGoalTemplate, on_delete=models.CASCADE)
+    recommendedValue = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
+
+    def __str__(self):
+        return f"{self.template.name} - {self.nutrient.name}"
+    
+class UserNutritionalGoal(models.Model):
+    # Represents a user's nutritional goals.
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    template = models.ForeignKey(NutritionalGoalTemplate, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.user.username}'s {self.template.name} Goals"
