@@ -1,102 +1,90 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 
 class Unit(models.Model):
-    id = models.AutoField(primary_key=True)
+    # Represents a unit of measurement, such as a gram or fluid ounce.
+    name = models.CharField(max_length=10, unique=True)
+    
+    def __str__(self):
+        return self.name
+    
+class ServingSize(models.Model):
+    # Represents a serving size, such as 1 cup or 100 grams.
+    amount = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0.01)])
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.amount} {self.unit}"
+
+class Nutrient(models.Model):
+    # Represents a nutrient, such as a macronutrient or a vitamin or mineral.
     name = models.CharField(max_length=50, unique=True)
-
-class FoodItem(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=50)
-    barcode = models.CharField(max_length=50)
-    calories = models.IntegerField()
-    protein = models.IntegerField()
-    carbs = models.IntegerField()
-    fats = models.IntegerField()
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
-    servingSize = models.IntegerField()
+    isCategory = models.BooleanField(default=False)
+    parentNutrient = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
 
-class Supplement(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=50)
-    barcode = models.CharField(max_length=50)
+    def __str__(self):
+        return self.name
+    
+    def clean(self):
+        if self.isCategory and self.parentNutrient:
+            raise ValidationError("A category nutrient cannot have a parent nutrient.")
 
-class Vitamin(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=50)
-    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
+class Item(models.Model):
+    # Represents a distinct edible item, including basic and packaged foods and supplements.
+    name = models.TextField()
+    barcode = models.CharField(max_length=50, null=True, blank=True)
+    servingSize = models.ForeignKey(ServingSize, on_delete=models.CASCADE)
+    nutrients = models.ManyToManyField(Nutrient, through='ItemNutrient', related_name='items')
 
-class Mineral(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=50)
-    unit = models.CharField(max_length=50)
+    def __str__(self):
+        return self.name
 
 class CombinedItem(models.Model):
-    id = models.AutoField(primary_key=True)
+    # Represents a user-defined combination of items, such as a recipe or a meal.
     userId = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
 
+    def __str__(self):
+        return self.name
+
 class Consumed(models.Model):
-    id = models.AutoField(primary_key=True)
+    # Represents a user's consumption of an item or combined item.
     userId = models.ForeignKey(User, on_delete=models.CASCADE)
-    foodId = models.ForeignKey(FoodItem, on_delete=models.CASCADE, null=True, blank=True)
-    supplementId = models.ForeignKey(Supplement, on_delete=models.CASCADE, null=True, blank=True)
+    itemId = models.ForeignKey(Item, on_delete=models.CASCADE, null=True, blank=True)
     combinedItemId = models.ForeignKey(CombinedItem, on_delete=models.CASCADE, null=True, blank=True)
     consumedAt = models.DateTimeField(auto_now_add=True)
-    portion = models.IntegerField()
+    portion = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
 
     def clean(self):
-        # Ensure that at least one of foodId, supplementId, or combinedItemId is populated.
-        if (
-            not self.foodId and
-            not self.supplementId and
-            not self.combinedItemId
-        ):
-            raise ValidationError("At least one of foodId, supplementId, or combinedItemId must be populated.")
-
+        # Ensure that at least one of itemId or combinedItemId is populated.
+        if not self.itemId and not self.combinedItemId:
+            raise ValidationError("At least one of itemId or combinedItemId must be populated.")
+        
+        # Ensure that only one of itemId or combinedItemId is populated.
+        if self.itemId and self.combinedItemId:
+            raise ValidationError("Only one of itemId or combinedItemId should be populated.")
+    
 class CombinedItemElement(models.Model):
-    id = models.AutoField(primary_key=True)
-    combinedFoodId = models.ForeignKey(CombinedItem, on_delete=models.CASCADE)
-    foodId = models.ForeignKey(FoodItem, on_delete=models.CASCADE, null=True, blank=True)
-    supplementId = models.ForeignKey(Supplement, on_delete=models.CASCADE, null=True, blank=True)
-    servingSize = models.IntegerField()
+    # Represents an item that is part of a combined item.
+    combinedItemId = models.ForeignKey(CombinedItem, on_delete=models.CASCADE)
+    itemId = models.ForeignKey(Item, on_delete=models.CASCADE, null=True, blank=True)
+    servingSize = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0.01)])
 
-    def clean(self):
-        # Ensure that at least one of foodId or supplementId is populated.
-        if (
-            not self.foodId and
-            not self.supplementId
-        ):
-            raise ValidationError("At least one of foodId or supplementId must be populated.")
+class ItemNutrient(models.Model):
+    # Links an item to a nutrient and specifies the amount of that nutrient in the item.
+    itemId = models.ForeignKey(Item, on_delete=models.CASCADE)
+    nutrientId = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
 
-class FoodVitamin(models.Model):
-    id = models.AutoField(primary_key=True)
-    foodId = models.ForeignKey(FoodItem, on_delete=models.CASCADE)
-    vitaminId = models.ForeignKey(Vitamin, on_delete=models.CASCADE)
-    amount = models.IntegerField()
+class ItemBioactive(models.Model):
+    # Represents a bioactive compound in an item.
+    itemId = models.ForeignKey(Item, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    amount = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
-class FoodMineral(models.Model):
-    id = models.AutoField(primary_key=True)
-    foodId = models.ForeignKey(FoodItem, on_delete=models.CASCADE)
-    mineralId = models.ForeignKey(Mineral, on_delete=models.CASCADE)
-    amount = models.IntegerField()
-
-class SupplementVitamin(models.Model):
-    id = models.AutoField(primary_key=True)
-    supplementId = models.ForeignKey(Supplement, on_delete=models.CASCADE)
-    vitaminId = models.ForeignKey(Vitamin, on_delete=models.CASCADE)
-    amount = models.IntegerField()
-
-class SupplementMineral(models.Model):
-    id = models.AutoField(primary_key=True)
-    supplementId = models.ForeignKey(Supplement, on_delete=models.CASCADE)
-    mineralId = models.ForeignKey(Mineral, on_delete=models.CASCADE)
-    amount = models.IntegerField()
-
-class SupplementIngredient(models.Model):
-    id = models.AutoField(primary_key=True)
-    supplementId = models.ForeignKey(Supplement, on_delete=models.CASCADE)
-    foodId = models.ForeignKey(FoodItem, on_delete=models.CASCADE)
-    amount = models.IntegerField()
-    unit = models.CharField(max_length=50)
+    def __str__(self):
+        return self.name
