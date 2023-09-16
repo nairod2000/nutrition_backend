@@ -11,7 +11,7 @@ class Unit(models.Model):
         return self.name
     
 class ServingSize(models.Model):
-    # Represents a serving size, such as 1 cup or 100 grams.
+    # Represents a serving size, such as 1 pint or 100 grams.
     amount = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0.01)])
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
