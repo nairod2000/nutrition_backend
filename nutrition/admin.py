@@ -1,6 +1,5 @@
 from django.contrib import admin
-from django.contrib.auth.models import User
-from .models import Unit, Nutrient, Item, ServingSize, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal
+from .models import User, Unit, Nutrient, Item, ServingSize, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
 
 class ItemNutrientInline(admin.TabularInline):
     model = ItemNutrient
@@ -13,6 +12,10 @@ class CombinedItemElementInline(admin.TabularInline):
 
 class ConsumedInline(admin.TabularInline):
     model = Consumed
+
+@admin.register(User)
+class UnitAdmin(admin.ModelAdmin):
+    list_display = ('id', 'username', 'email', 'first_name', 'last_name', 'age', 'weight', 'height', 'sex', 'is_pregnant', 'is_staff', 'is_superuser')
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
@@ -42,7 +45,7 @@ class ConsumedAdmin(admin.ModelAdmin):
 
 @admin.register(CombinedItemElement)
 class CombinedItemElementAdmin(admin.ModelAdmin):
-    list_display = ('id', 'combinedItemId', 'itemId', 'servingSize')
+    list_display = ('id', 'combinedItemId', 'itemId', 'portion')
 
 @admin.register(ItemNutrient)
 class ItemNutrientAdmin(admin.ModelAdmin):
@@ -63,3 +66,7 @@ class GoalTemplateNutrientAdmin(admin.ModelAdmin):
 @admin.register(UserNutritionalGoal)
 class UserNutritionalGoalAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'template')
+
+@admin.register(UserNutritionalGoalNutrient)
+class UserNutritionalGoalNutrientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'goal', 'nutrient', 'recommendedValue')

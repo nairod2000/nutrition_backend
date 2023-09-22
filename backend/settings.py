@@ -90,6 +90,8 @@ DATABASES = {
     }
 }
 
+# Authentication user model
+AUTH_USER_MODEL = 'nutrition.User'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
