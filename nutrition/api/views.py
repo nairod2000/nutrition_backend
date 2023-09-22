@@ -1,19 +1,59 @@
 from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 from django.contrib.auth.hashers import make_password
 
 from rest_framework import generics, status, viewsets
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from nutrition.models import Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal
+from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
 
 from .permissions import IsAdminUserOrReadOnly
-from .serializers import ChangePasswordSerializer, UserUpdateSerializer, UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, NutritionalGoalTemplateSerializer, GoalTemplateNutrientSerializer, UserNutritionalGoalSerializer
+from .serializers import ChangePasswordSerializer, UserUpdateSerializer, UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, NutritionalGoalTemplateSerializer, GoalTemplateNutrientSerializer, UserNutritionalGoalSerializer, UserNutritionalGoalNutrientSerializer
 
 ### User Management ###
+
+# Create User (sign up)
+class UserCreateView(CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+    
+    def perform_create(self, serializer):
+        password = serializer.validated_data.get('password')
+        hashed_password = make_password(password)
+        serializer.validated_data['password'] = hashed_password
+        serializer.save()
+
+# Create User and Authenticate (sign up and log in)
+class UserCreateAndAuthView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            password = serializer.validated_data.get('password')
+            hashed_password = make_password(password)
+            serializer.validated_data['password'] = hashed_password
+            user = serializer.save()
+            token, created = Token.objects.get_or_create(user=user)
+            # Return user and token in the response
+            return Response({'user': UserSerializer(user).data, 'token': token.key}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Retrieve and update the user's own profile information
+class UserUpdateView(RetrieveUpdateAPIView):
+    serializer_class = UserUpdateSerializer
+    queryset = User.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Return the currently authenticated user
+        return self.request.user
 
 # Change Password
 class ChangePasswordView(APIView):
@@ -30,27 +70,6 @@ class ChangePasswordView(APIView):
                 return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
             return Response({'error': 'Incorrect old password.'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# Create User (sign up)
-class UserCreateView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [AllowAny]
-    def perform_create(self, serializer):
-        password = serializer.validated_data.get('password')
-        hashed_password = make_password(password)
-        serializer.validated_data['password'] = hashed_password
-        serializer.save()
-
-# Retrieve and update the user's own profile information
-class UserUpdateView(generics.RetrieveUpdateAPIView):
-    serializer_class = UserUpdateSerializer
-    queryset = User.objects.all()
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        # Return the currently authenticated user
-        return self.request.user
 
 ### Model View Sets ###
 
@@ -122,4 +141,9 @@ class GoalTemplateNutrientViewSet(viewsets.ModelViewSet):
 class UserNutritionalGoalViewSet(viewsets.ModelViewSet):
     queryset = UserNutritionalGoal.objects.all()
     serializer_class = UserNutritionalGoalSerializer
+    permission_classes = [IsAuthenticated]
+
+class UserNutritionalGoalNutrientViewSet(viewsets.ModelViewSet):
+    queryset = UserNutritionalGoalNutrient.objects.all()
+    serializer_class = UserNutritionalGoalNutrientSerializer
     permission_classes = [IsAuthenticated]

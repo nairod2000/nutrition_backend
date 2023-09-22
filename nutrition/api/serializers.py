@@ -1,6 +1,6 @@
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 from rest_framework import serializers
-from nutrition.models import Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal
+from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
@@ -12,7 +12,10 @@ class ResetPasswordEmailSerializer(serializers.Serializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name']
+        fields = ['username', 'email', 'first_name', 'last_name', 'age', 'weight', 'height', 'sex', 'is_pregnant']
+        extra_kwargs = {
+            'username': {'required': False},
+        }
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -83,4 +86,9 @@ class GoalTemplateNutrientSerializer(serializers.ModelSerializer):
 class UserNutritionalGoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserNutritionalGoal
+        fields = '__all__'
+
+class UserNutritionalGoalNutrientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserNutritionalGoalNutrient
         fields = '__all__'
