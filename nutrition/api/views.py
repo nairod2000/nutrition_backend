@@ -10,10 +10,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, S
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
+from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
 
 from .permissions import IsAdminUserOrReadOnly
-from .serializers import ChangePasswordSerializer, UserUpdateSerializer, UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, NutritionalGoalTemplateSerializer, GoalTemplateNutrientSerializer, UserNutritionalGoalSerializer, UserNutritionalGoalNutrientSerializer
+from .serializers import ChangePasswordSerializer, UserUpdateSerializer, UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, FavoriteItemSerializer, NutritionalGoalTemplateSerializer, GoalTemplateNutrientSerializer, UserNutritionalGoalSerializer, UserNutritionalGoalNutrientSerializer
 
 ### User Management ###
 
@@ -126,6 +126,11 @@ class ItemNutrientViewSet(viewsets.ModelViewSet):
 class ItemBioactiveViewSet(viewsets.ModelViewSet):
     queryset = ItemBioactive.objects.all()
     serializer_class = ItemBioactiveSerializer
+    permission_classes = [IsAuthenticated]
+
+class FavoriteItemViewSet(viewsets.ModelViewSet):
+    queryset = FavoriteItem.objects.all()
+    serializer_class = FavoriteItemSerializer
     permission_classes = [IsAuthenticated]
 
 class NutritionalGoalTemplateViewSet(viewsets.ModelViewSet):

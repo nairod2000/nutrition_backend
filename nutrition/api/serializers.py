@@ -1,6 +1,6 @@
 from django.contrib.auth.models import Group
 from rest_framework import serializers
-from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
+from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
@@ -71,6 +71,11 @@ class ItemNutrientSerializer(serializers.ModelSerializer):
 class ItemBioactiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemBioactive
+        fields = '__all__'
+
+class FavoriteItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FavoriteItem
         fields = '__all__'
 
 class NutritionalGoalTemplateSerializer(serializers.ModelSerializer):

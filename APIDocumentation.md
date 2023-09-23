@@ -357,7 +357,7 @@ These endpoints based on Django REST Framework's ModelViewSet and provide the ba
 - **Permissions:** Authenticated users only.
 
 ### Item Bioactives
-**Endpoint:** `/itembioactives/`
+**Endpoint:** `/api/itembioactives/`
 - **Methods:**
   - `GET`: Retrieve a list of all item bioactives.
   - `POST`: Create a new item bioactive.
@@ -368,6 +368,20 @@ These endpoints based on Django REST Framework's ModelViewSet and provide the ba
   - `GET`: Retrieve a specific item bioactive by ID.
   - `PUT/PATCH`: Update a specific item bioactive by ID.
   - `DELETE`: Delete a specific item bioactive by ID.
+- **Permissions:** Authenticated users only.
+
+### Item Bioactives
+**Endpoint:** `/api/favoriteitems/`
+- **Methods:**
+  - `GET`: Retrieve a list of all favorite items.
+  - `POST`: Create a new fovorite item.
+- **Permissions:** Authenticated users only.
+
+**Endpoint:** `/api/favoriteitems/{id}/`
+- **Methods:**
+  - `GET`: Retrieve a specific fovorite item by ID.
+  - `PUT/PATCH`: Update a specific fovorite item by ID.
+  - `DELETE`: Delete a specific fovorite item by ID.
 - **Permissions:** Authenticated users only.
 
 ### Nutritional Goal Templates
