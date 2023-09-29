@@ -2,6 +2,11 @@ from django.contrib.auth.models import Group
 from rest_framework import serializers
 from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
 
+
+
+
+# User Management Serializers
+
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
@@ -16,6 +21,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'username': {'required': False},
         }
+
+
+# Dashboard Serializer
+
+
+
+
+
+# Model Serializers
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
