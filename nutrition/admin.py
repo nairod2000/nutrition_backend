@@ -1,85 +1,65 @@
 from django.contrib import admin
-from .models import User, Unit, ServingSize, Nutrient, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
+from django.contrib.auth.models import User
+from .models import Unit, Nutrient, Item, ServingSize, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal
 
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'age', 'weight', 'height', 'sex', 'is_pregnant', 'is_staff', 'is_superuser', 'date_joined')
-    list_filter = ('is_staff', 'is_superuser', 'date_joined')
-    
+class ItemNutrientInline(admin.TabularInline):
+    model = ItemNutrient
+
+class ItemBioactiveInline(admin.TabularInline):
+    model = ItemBioactive
+
+class CombinedItemElementInline(admin.TabularInline):
+    model = CombinedItemElement
+
+class ConsumedInline(admin.TabularInline):
+    model = Consumed
+
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     list_display = ('name',)
 
 @admin.register(ServingSize)
 class ServingSizeAdmin(admin.ModelAdmin):
-    list_display = ('amount', 'unitId')
+    list_display = ('id', 'amount', 'unit')
 
 @admin.register(Nutrient)
 class NutrientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'unitId', 'isCategory', 'parentNutrientId')
-
-
-class ItemNutrientInline(admin.TabularInline):
-    model = ItemNutrient
-    extra = 1
-
-class ItemBioactiveInline(admin.TabularInline):
-    model = ItemBioactive
-    extra = 1
+    list_display = ('id', 'name', 'unit', 'isCategory', 'parentNutrient')
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'barcode', 'calories', 'servingSizeId', 'userId', 'isCustom')
-    list_filter = ('isCustom',)
+    list_display = ('id', 'name', 'barcode', 'servingSize')
     inlines = [ItemNutrientInline, ItemBioactiveInline]
     
 @admin.register(CombinedItem)
 class CombinedItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'userId')
+    list_display = ('id', 'userId', 'name')
+    inlines = [CombinedItemElementInline]
 
 @admin.register(Consumed)
 class ConsumedAdmin(admin.ModelAdmin):
-    list_display = ('userId', 'item_display', 'combined_item_display', 'consumedAt', 'portion')
-    list_filter = ('userId', 'consumedAt')
-
-    def item_display(self, obj):
-        return obj.itemId.name if obj.itemId else ''
-    item_display.short_description = 'Item'
-
-    def combined_item_display(self, obj):
-        return obj.combinedItemId.name if obj.combinedItemId else ''
-    combined_item_display.short_description = 'Combined Item'
+    list_display = ('id', 'userId', 'itemId', 'combinedItemId', 'consumedAt', 'portion')
 
 @admin.register(CombinedItemElement)
 class CombinedItemElementAdmin(admin.ModelAdmin):
-    list_display = ('combinedItemId', 'itemId', 'portion')
+    list_display = ('id', 'combinedItemId', 'itemId', 'servingSize')
 
-@admin.register(FavoriteItem)
-class FavoriteItemAdmin(admin.ModelAdmin):
-    list_display = ('userId', 'itemId')
+@admin.register(ItemNutrient)
+class ItemNutrientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'itemId', 'nutrientId', 'amount')
 
-class GoalTemplateNutrientInline(admin.TabularInline):
-    model = GoalTemplateNutrient
-    extra = 1
+@admin.register(ItemBioactive)
+class ItemBioactiveAdmin(admin.ModelAdmin):
+    list_display = ('id', 'itemId', 'name', 'amount', 'unit')
 
 @admin.register(NutritionalGoalTemplate)
 class NutritionalGoalTemplateAdmin(admin.ModelAdmin):
-    list_display = ('name', 'calories')
-    inlines = [GoalTemplateNutrientInline]
+    list_display = ('id', 'name')
 
 @admin.register(GoalTemplateNutrient)
 class GoalTemplateNutrientAdmin(admin.ModelAdmin):
-    list_display = ('templateId', 'nutrientId', 'recommendedValue')
-
-class UserNutritionalGoalNutrientInline(admin.TabularInline):
-    model = UserNutritionalGoalNutrient
-    extra = 1
+    list_display = ('id', 'nutrient', 'template', 'recommendedValue')
 
 @admin.register(UserNutritionalGoal)
 class UserNutritionalGoalAdmin(admin.ModelAdmin):
-    list_display = ('userId', 'name', 'templateId', 'calories')
-    inlines = [UserNutritionalGoalNutrientInline]
-
-@admin.register(UserNutritionalGoalNutrient)
-class UserNutritionalGoalNutrientAdmin(admin.ModelAdmin):
-    list_display = ('goalId', 'nutrientId', 'recommendedValue')
+    list_display = ('id', 'user', 'template')
