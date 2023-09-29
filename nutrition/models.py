@@ -30,17 +30,17 @@ class Unit(models.Model):
 class ServingSize(models.Model):
     # Represents a serving size, such as 1 pint or 100 grams.
     amount = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0.01)])
-    unitId = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.amount} {self.unitId}"
+        return f"{self.amount} {self.unit}"
 
 class Nutrient(models.Model):
     # Represents a nutrient, such as a macronutrient or a vitamin or mineral.
     name = models.CharField(max_length=50, unique=True)
-    unitId = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     isCategory = models.BooleanField(default=False)
-    parentNutrientId = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    parentNutrient = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -50,25 +50,15 @@ class Item(models.Model):
     name = models.TextField()
     barcode = models.CharField(max_length=50, null=True, blank=True)
     calories = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
-<<<<<<< HEAD
-    servingSizeId = models.ForeignKey(ServingSize, on_delete=models.CASCADE)
-    nutrients = models.ManyToManyField(Nutrient, through='ItemNutrient', related_name='items')
-    userId = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) # Creator of item (if applicable)
-=======
     servingSize = models.ForeignKey(ServingSize, on_delete=models.CASCADE)
     nutrients = models.ManyToManyField(Nutrient, through='ItemNutrient', related_name='items')
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) # Creator of item (if applicable)
->>>>>>> dev-casey
     favoritedBy = models.ManyToManyField(User, through='FavoriteItem', related_name='favorites')
     isCustom = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         # If item is user-created, set isCustom to True.
-<<<<<<< HEAD
-        if self.userId:
-=======
         if self.user:
->>>>>>> dev-casey
             self.isCustom = True
         super(Item, self).save(*args, **kwargs)
 
@@ -108,13 +98,8 @@ class Consumed(models.Model):
     
 class CombinedItemElement(models.Model):
     # Represents an item that is part of a combined item.
-<<<<<<< HEAD
-    combinedItemId = models.ForeignKey(CombinedItem, on_delete=models.CASCADE)
-    itemId = models.ForeignKey(Item, on_delete=models.CASCADE)
-=======
     combinedItem = models.ForeignKey(CombinedItem, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
->>>>>>> dev-casey
     portion = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
 
     def __str__(self):
@@ -135,22 +120,13 @@ class ItemBioactive(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     amount = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
-    unitId = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
 
 class FavoriteItem(models.Model):
     # Represents one of the favorite items of a user.
-<<<<<<< HEAD
-    userId = models.ForeignKey(User, on_delete=models.CASCADE)
-    itemId = models.ForeignKey(Item, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.userId.username}'s favorite: {self.itemId.name}"
-
-class NutritionalGoalTemplate(models.Model):
-=======
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
 
@@ -158,7 +134,6 @@ class NutritionalGoalTemplate(models.Model):
         return f"{self.user.username}'s favorite: {self.item.name}"
 
 class GoalTemplate(models.Model):
->>>>>>> dev-casey
     # Represents a template for a nutritional goal, such as fda recommended daily values or weight loss or gain.
     name = models.CharField(max_length=50)
     calories = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
@@ -169,30 +144,15 @@ class GoalTemplate(models.Model):
     
 class GoalTemplateNutrient(models.Model):
     # Links a nutrient to a nutritional goal template and specifies the recommended value for that nutrient.
-<<<<<<< HEAD
-    nutrientId = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
-    templateId = models.ForeignKey(NutritionalGoalTemplate, on_delete=models.CASCADE)
-=======
     nutrient = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
     template = models.ForeignKey(GoalTemplate, on_delete=models.CASCADE)
->>>>>>> dev-casey
     recommendedValue = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
 
     def __str__(self):
-        return f"{self.templateId.name} - {self.nutrientId.name}"
+        return f"{self.template.name} - {self.nutrient.name}"
     
 class UserGoal(models.Model):
     # Represents a user's nutritional goals.
-<<<<<<< HEAD
-    userId = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100) # Name of goal, not user
-    templateId = models.ForeignKey(NutritionalGoalTemplate, on_delete=models.CASCADE)
-    calories = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
-    nutrients = models.ManyToManyField(Nutrient, through='UserNutritionalGoalNutrient', related_name='goals')
-
-    def __str__(self):
-        return f"{self.userId.username}'s {self.name} Goal"
-=======
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100) # Name of goal, not user
     template = models.ForeignKey(GoalTemplate, on_delete=models.CASCADE)
@@ -201,24 +161,10 @@ class UserGoal(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s {self.name} Goal"
->>>>>>> dev-casey
     
     def save(self, *args, **kwargs):
         # Set the name field based on the selected template's name
         if not self.name:
-<<<<<<< HEAD
-            self.name = self.templateId.name
-        super(UserNutritionalGoal, self).save(*args, **kwargs)
-    
-class UserNutritionalGoalNutrient(models.Model):
-    # Links a nutrient to a user's nutritional goal and specifies the recommended value for that nutrient.
-    nutrientId = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
-    goalId = models.ForeignKey(UserNutritionalGoal, on_delete=models.CASCADE)
-    recommendedValue = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
-
-    def __str__(self):
-        return f"{self.goalId.userId.username}'s {self.goalId.name} Goal - {self.nutrientId.name}"
-=======
             self.name = self.template.name
         super(UserGoal, self).save(*args, **kwargs)
     
@@ -230,4 +176,3 @@ class UserGoalNutrient(models.Model):
 
     def __str__(self):
         return f"{self.goal.user.username}'s {self.goal.name} Goal - {self.nutrient.name}"
->>>>>>> dev-casey

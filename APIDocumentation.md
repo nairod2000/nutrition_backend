@@ -384,7 +384,7 @@ These endpoints based on Django REST Framework's ModelViewSet and provide the ba
   - `DELETE`: Delete a specific fovorite item by ID.
 - **Permissions:** Authenticated users only.
 
-### Nutritional Goal Templates
+### Goal Templates
 **Endpoint:** `/api/nutritionalgoaltemplates/`
 - **Methods:**
   - `GET`: Retrieve a list of all nutritional goal templates.
@@ -412,7 +412,7 @@ These endpoints based on Django REST Framework's ModelViewSet and provide the ba
   - `DELETE`: Delete a specific goal template nutrient by ID.
 - **Permissions:** Admin users can modify, read-only for others.
 
-### User Nutritional Goals
+### User Goals
 **Endpoint:** `/api/usernutritionalgoals/`
 - **Methods:**
   - `GET`: Retrieve a list of all user nutritional goals.
@@ -426,7 +426,7 @@ These endpoints based on Django REST Framework's ModelViewSet and provide the ba
   - `DELETE`: Delete a specific user nutritional goal by ID.
 - **Permissions:** Authenticated users only.
 
-### User Nutritional Goal Nutrients
+### User Goal Nutrients
 **Endpoint:** `/api/usernutritionalgoalnutrients/`
 - **Methods:**
   - `GET`: Retrieve a list of all user nutritional goal nutrients.

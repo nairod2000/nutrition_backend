@@ -1,6 +1,6 @@
 from django.contrib.auth.models import Group
 from rest_framework import serializers
-from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
+from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, GoalTemplate, GoalTemplateNutrient, UserGoal, UserGoalNutrient
 
 
 
@@ -92,9 +92,9 @@ class FavoriteItemSerializer(serializers.ModelSerializer):
         model = FavoriteItem
         fields = '__all__'
 
-class NutritionalGoalTemplateSerializer(serializers.ModelSerializer):
+class GoalTemplateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = NutritionalGoalTemplate
+        model = GoalTemplate
         fields = '__all__'
 
 class GoalTemplateNutrientSerializer(serializers.ModelSerializer):
@@ -102,12 +102,12 @@ class GoalTemplateNutrientSerializer(serializers.ModelSerializer):
         model = GoalTemplateNutrient
         fields = '__all__'
 
-class UserNutritionalGoalSerializer(serializers.ModelSerializer):
+class UserGoalSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserNutritionalGoal
+        model = UserGoal
         fields = '__all__'
 
-class UserNutritionalGoalNutrientSerializer(serializers.ModelSerializer):
+class UserGoalNutrientSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserNutritionalGoalNutrient
+        model = UserGoalNutrient
         fields = '__all__'

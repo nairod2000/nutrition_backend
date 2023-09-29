@@ -10,10 +10,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, S
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, NutritionalGoalTemplate, GoalTemplateNutrient, UserNutritionalGoal, UserNutritionalGoalNutrient
+from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, GoalTemplate, GoalTemplateNutrient, UserGoal, UserGoalNutrient
 
 from .permissions import IsAdminUserOrReadOnly
-from .serializers import ChangePasswordSerializer, UserUpdateSerializer, UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, FavoriteItemSerializer, NutritionalGoalTemplateSerializer, GoalTemplateNutrientSerializer, UserNutritionalGoalSerializer, UserNutritionalGoalNutrientSerializer
+from .serializers import ChangePasswordSerializer, UserUpdateSerializer, UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, FavoriteItemSerializer, GoalTemplateSerializer, GoalTemplateNutrientSerializer, UserGoalSerializer, UserGoalNutrientSerializer
 
 ### User Management ###
 
@@ -133,9 +133,9 @@ class FavoriteItemViewSet(viewsets.ModelViewSet):
     serializer_class = FavoriteItemSerializer
     permission_classes = [IsAuthenticated]
 
-class NutritionalGoalTemplateViewSet(viewsets.ModelViewSet):
-    queryset = NutritionalGoalTemplate.objects.all()
-    serializer_class = NutritionalGoalTemplateSerializer
+class GoalTemplateViewSet(viewsets.ModelViewSet):
+    queryset = GoalTemplate.objects.all()
+    serializer_class = GoalTemplateSerializer
     permission_classes = [IsAdminUserOrReadOnly]
 
 class GoalTemplateNutrientViewSet(viewsets.ModelViewSet):
@@ -143,12 +143,12 @@ class GoalTemplateNutrientViewSet(viewsets.ModelViewSet):
     serializer_class = GoalTemplateNutrientSerializer
     permission_classes = [IsAdminUserOrReadOnly]
 
-class UserNutritionalGoalViewSet(viewsets.ModelViewSet):
-    queryset = UserNutritionalGoal.objects.all()
-    serializer_class = UserNutritionalGoalSerializer
+class UserGoalViewSet(viewsets.ModelViewSet):
+    queryset = UserGoal.objects.all()
+    serializer_class = UserGoalSerializer
     permission_classes = [IsAuthenticated]
 
-class UserNutritionalGoalNutrientViewSet(viewsets.ModelViewSet):
-    queryset = UserNutritionalGoalNutrient.objects.all()
-    serializer_class = UserNutritionalGoalNutrientSerializer
+class UserGoalNutrientViewSet(viewsets.ModelViewSet):
+    queryset = UserGoalNutrient.objects.all()
+    serializer_class = UserGoalNutrientSerializer
     permission_classes = [IsAuthenticated]
