@@ -114,7 +114,6 @@ class ItemNutrient(models.Model):
     def __str__(self):
         return f"{self.item.name} - {self.nutrient.name}"
 
-
 class ItemBioactive(models.Model):
     # Represents a bioactive compound in an item.
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
@@ -158,6 +157,7 @@ class UserGoal(models.Model):
     template = models.ForeignKey(GoalTemplate, on_delete=models.CASCADE)
     calories = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
     nutrients = models.ManyToManyField(Nutrient, through='UserGoalNutrient', related_name='goals')
+    isActive = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username}'s {self.name} Goal"
@@ -166,7 +166,21 @@ class UserGoal(models.Model):
         # Set the name field based on the selected template's name
         if not self.name:
             self.name = self.template.name
+
+        # If a new goal is created and the user has no other goals, set it as active
+        if not self.pk and not UserGoal.objects.filter(user=self.user).exists():
+            self.isActive = True
+        
+        # If a goal is set to active, set all other goals for the user to inactive
+        if self.isActive:
+            UserGoal.objects.filter(user=self.user).exclude(pk=self.pk).update(isActive=False)
+        
         super(UserGoal, self).save(*args, **kwargs)
+
+    def clean(self):
+        # Ensure that at least one goal is active
+        if not self.isActive and not UserGoal.objects.filter(user=self.user, isActive=True).exists():
+            raise ValidationError("At least one goal must be active.")
     
 class UserGoalNutrient(models.Model):
     # Links a nutrient to a user's nutritional goal and specifies the recommended value for that nutrient.
