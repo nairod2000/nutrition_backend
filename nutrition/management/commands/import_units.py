@@ -1,5 +1,6 @@
 import os
 import csv
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from nutrition.models import Unit
 
@@ -7,8 +8,9 @@ class Command(BaseCommand):
     help = 'Import units from a CSV file'
 
     def handle(self, *args, **options):
-        # Define the relative path to CSV file
+        # Define the relative path to CSV file with double backslashes
         csv_file = os.path.join("data", "units.csv")
+        print(f"CSV file path: {csv_file}")
 
         try:
             # Open the CSV file and read its contents
