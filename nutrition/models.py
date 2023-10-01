@@ -11,6 +11,8 @@ class User(AbstractUser):
     sex = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')], blank=True, null=True)
     is_pregnant = models.BooleanField(default=False)
     is_lactating = models.BooleanField(default=False)
+    activity_level = models.CharField(max_length=20, choices=[('Sedentary', 'Sedentary'), ('Lightly Active', 'Lightly Active'), ('Moderately Active', 'Moderately Active'), ('Very Active', 'Very Active'), ('Extremely Active', 'Extremely Active')], blank=True, null=True)
+    diet_goal = models.CharField(max_length=20, choices=[('Lose Weight', 'Lose Weight'), ('Maintain Weight', 'Maintain Weight'), ('Gain Weight', 'Gain Weight')], blank=True, null=True)
     groups = models.ManyToManyField(Group, related_name='user_set_nutrition', blank=True, verbose_name='groups')
     user_permissions = models.ManyToManyField(Permission, related_name='user_set_nutrition', blank=True, verbose_name='user permissions')
 
@@ -26,11 +28,18 @@ class User(AbstractUser):
 
 class Unit(models.Model):
     # Represents a unit of measurement, such as a gram or fluid ounce.
-    name = models.CharField(max_length=10, unique=True)
-    abbreviation = models.CharField(max_length=7, unique=True)
+    name = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    abbreviation = models.CharField(max_length=10, unique=True, null=True, blank=True)
     
+    def clean(self):
+        if not self.name and not self.abbreviation:
+            raise ValidationError("Either 'name' or 'abbreviation' must be provided.")
+
     def __str__(self):
-        return self.name
+        if self.name:
+            return self.name
+        else:
+            return self.abbreviation
     
 class ServingSize(models.Model):
     # Represents a serving size, such as 1 pint or 100 grams.
@@ -139,10 +148,12 @@ class FavoriteItem(models.Model):
 
 class GoalTemplate(models.Model):
     # Represents a template for a goal, such as FDA recommended daily intake.
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=100, unique=True)
     sex = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')], blank=True, null=True)
     isPregnant = models.BooleanField(default=False)
     isLactating = models.BooleanField(default=False)
+    ageMin = models.PositiveIntegerField(default=0)
+    ageMax = models.PositiveIntegerField(default=120)
     nutrients = models.ManyToManyField(Nutrient, through='GoalTemplateNutrient', related_name='templates')
 
     def __str__(self):
@@ -152,7 +163,7 @@ class GoalTemplateNutrient(models.Model):
     # Links a nutrient to a goal template and specifies the recommended value for that nutrient.
     nutrient = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
     template = models.ForeignKey(GoalTemplate, on_delete=models.CASCADE)
-    recommendedValue = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
+    recommendedValue = models.DecimalField(default=0, max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
 
     def __str__(self):
         return f"{self.template.name} - {self.nutrient.name}"
@@ -160,7 +171,7 @@ class GoalTemplateNutrient(models.Model):
 class UserGoal(models.Model):
     # Represents a user's goals.
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100) # Name of goal, not user
+    name = models.CharField(max_length=100, unique='True') # Name of goal, not user
     template = models.ForeignKey(GoalTemplate, on_delete=models.CASCADE)
     calories = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
     nutrients = models.ManyToManyField(Nutrient, through='UserGoalNutrient', related_name='goals')

@@ -1,3 +1,10 @@
+#####################################################
+# This script imports nutrients from a CSV file and creates Nutrient instances in the database.
+# The CSV file must be located in the data folder.
+# The CSV file must have the following columns:
+# name, unit_abbreviation, isCategory, parentNutrient
+#####################################################
+
 import os
 import csv
 from django.core.management.base import BaseCommand
@@ -8,30 +15,34 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Define the relative path to CSV file
-        csv_file = os.path.join("data", "nutrients.csv")
+        csv_file = os.path.normpath(os.path.join("data", "nutrients.csv"))
 
         try:
             # Open the CSV file and read its contents
-            with open(csv_file, mode='r') as file:
+            with open(csv_file, mode='r', encoding='utf-8-sig') as file:
                 reader = csv.DictReader(file)
+
+                # Iterate through each row in the CSV
                 for row in reader:
                     name = row['name']
-                    unit_name = row['unit']
+                    unit_abbreviation = row['unit_abbreviation']
                     is_category = row['isCategory']
-                    parent_name = row['parentNutrient']
+                    parent_nutrient = row['parentNutrient']
 
                     # Get or create the Unit object
-                    unit, created = Unit.objects.get_or_create(name=unit_name)
-
+                    unit, created = Unit.objects.get_or_create(abbreviation=unit_abbreviation)
+                    
                     # Get or create the Nutrient object
-                    nutrient, created = Nutrient.objects.get_or_create(name=name)
-                    nutrient.unit = unit
+                    nutrient, created = Nutrient.objects.get_or_create(name=name, unit=unit)
                     nutrient.isCategory = is_category.lower() == 'true'
 
                     # If a parent nutrient is specified, link it
-                    if parent_name:
-                        parent_nutrient, created = Nutrient.objects.get_or_create(name=parent_name)
-                        nutrient.parentNutrient = parent_nutrient
+                    if parent_nutrient:
+                        try:
+                            parent_nutrient = Nutrient.objects.get(name=parent_nutrient)
+                            nutrient.parentNutrient = parent_nutrient
+                        except Nutrient.DoesNotExist:
+                            self.stdout.write(self.style.ERROR(f'Parent nutrient with name "{parent_nutrient}" does not exist.'))
 
                     nutrient.save()
 

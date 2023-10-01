@@ -3,8 +3,6 @@ from rest_framework import serializers
 from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, GoalTemplate, GoalTemplateNutrient, UserGoal, UserGoalNutrient
 
 
-
-
 # User Management Serializers
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -21,12 +19,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'username': {'required': False},
         }
-
-
-# Dashboard Serializer
-
-
-
 
 
 # Model Serializers
@@ -92,22 +84,25 @@ class FavoriteItemSerializer(serializers.ModelSerializer):
         model = FavoriteItem
         fields = '__all__'
 
+class GoalTemplateNutrientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GoalTemplateNutrient
+        fields = '__all__'
+
 class GoalTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoalTemplate
         fields = '__all__'
+    nutrients = NutrientSerializer(many=True, read_only=True)
 
-class GoalTemplateNutrientSerializer(serializers.ModelSerializer):
+class UserGoalNutrientSerializer(serializers.ModelSerializer):
+    
     class Meta:
-        model = GoalTemplateNutrient
+        model = UserGoalNutrient
         fields = '__all__'
 
 class UserGoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserGoal
         fields = '__all__'
-
-class UserGoalNutrientSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserGoalNutrient
-        fields = '__all__'
+    nutrients = NutrientSerializer(many=True, read_only=True)

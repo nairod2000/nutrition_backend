@@ -30,4 +30,5 @@ urlpatterns = [
     path('user-create-and-auth/', views.UserCreateAndAuthView.as_view(), name='user_create_and_auth'),
     path('user-update/', views.UserUpdateView.as_view(), name='user_update'),
     path('change-password/', views.ChangePasswordView.as_view(), name='change_password'),
+    path('goal-generate/', views.UserGoalGenerateView.as_view(), name='goal-generate'),
 ]

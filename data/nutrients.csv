@@ -1,4 +1,4 @@
-﻿name,unit,isCategory,parentNutrient
+﻿name,unit_abbreviation,isCategory,parentNutrient
 Total Water,L,,
 Carbohydrate,g,TRUE,
 Total Fiber,g,TRUE,

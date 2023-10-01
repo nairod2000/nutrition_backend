@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, GoalTemplate, GoalTemplateNutrient, UserGoal, UserGoalNutrient
+from nutrition.utils.nutrition_utils import calculate_calories, calculate_macronutrients
 
 from .permissions import IsAdminUserOrReadOnly
 from .serializers import ChangePasswordSerializer, UserUpdateSerializer, UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, FavoriteItemSerializer, GoalTemplateSerializer, GoalTemplateNutrientSerializer, UserGoalSerializer, UserGoalNutrientSerializer
@@ -70,6 +71,85 @@ class ChangePasswordView(APIView):
                 return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
             return Response({'error': 'Incorrect old password.'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+### Goals ###
+
+class UserGoalGenerateView(CreateAPIView):
+    serializer_class = UserGoalSerializer
+    queryset = UserGoal.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        # Get the user associated with the token
+        user = request.user
+
+        # Determine the GoalTemplate based on user attributes (sex, is_pregnant, is_lactating, age)
+        goal_template = GoalTemplate.objects.filter(
+            sex=user.sex,
+            isPregnant=user.is_pregnant,
+            isLactating=user.is_lactating,
+            ageMin__lte=user.age,
+            ageMax__gte=user.age
+        ).first()
+
+        if not goal_template:
+            return Response({'detail': 'No suitable GoalTemplate found for the user.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate the calories for the user
+        calculated_calories = calculate_calories(user)
+        nutrient_distribution = calculate_macronutrients(calculated_calories, user.age)
+
+        # Try to get an existing UserGoal with the same name
+        user_goal, created = UserGoal.objects.get_or_create(
+            user=user,
+            name=goal_template.name,
+            defaults={
+                'template': goal_template,
+                'calories': calculated_calories
+            }
+        )
+
+        # If the UserGoal was not created (already exists), update its attributes
+        if not created:
+            user_goal.template = goal_template
+            user_goal.calories = calculated_calories
+            user_goal.save()
+
+        # Copy GoalTemplateNutrients to UserGoalNutrients
+        goal_template_nutrients = goal_template.goaltemplatenutrient_set.all()
+        for nutrient in goal_template_nutrients:
+            user_goal_nutrient, created = UserGoalNutrient.objects.get_or_create(
+                goal=user_goal,
+                nutrient=nutrient.nutrient,
+                defaults={'targetValue': nutrient.recommendedValue}
+            )
+
+        # If the UserGoalNutrient was not created (already exists), update the targetValue
+        if not created:
+            user_goal_nutrient.targetValue = nutrient.recommendedValue
+            user_goal_nutrient.save()
+
+
+        # Create or modify UserGoalNutrients for Carbohydrate, Fat, and Protein
+        for nutrient_name, target_value in nutrient_distribution.items():
+            nutrient, _ = Nutrient.objects.get_or_create(name=nutrient_name)
+            user_goal_nutrient, _ = UserGoalNutrient.objects.get_or_create(
+                goal=user_goal,
+                nutrient=nutrient,
+                defaults={'targetValue': target_value}
+            )
+        # If the UserGoalNutrient already exists, update the targetValue
+        if not user_goal_nutrient._state.adding:
+            user_goal_nutrient.targetValue = target_value
+            user_goal_nutrient.save()
+
+        # Serialize the UserGoal object
+        serializer = self.get_serializer(user_goal)
+        headers = self.get_success_headers(serializer.data)
+        
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
 ### Model View Sets ###
 

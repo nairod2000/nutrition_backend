@@ -219,6 +219,53 @@ Authorization: Token user_token
 }
 ```
 
+## Goals
+
+### Generate User Goal
+
+This endpoint generates a user-specific nutrition goal based on user attributes and returns the goal's details, including calorie and nutrient targets.
+
+- **Endpoint:** `/api/goal-generate/`
+- **Method:** POST
+
+**Request:**
+```
+POST /api/goal-generate/
+Content-Type: application/json
+Authorization: Token user_token
+```
+
+**Response:**
+```
+{
+    "id": 1,
+    "name": "FDA RDIs for Males Ages 31 to 50",
+    "calories": "2950",
+    "isActive": true,
+    "user": 1,
+    "template": 142,
+    "nutrients": [
+        {
+            "id": 81,
+            "name": "Nutrient Name 1",
+            "targetValue": 100
+        },
+        {
+            "id": 82,
+            "name": "Nutrient Name 2",
+            "targetValue": 200
+        },
+                {
+            "id": 81,
+            "name": "Nutrient Name 3",
+            "targetValue": 12.5
+        },
+        ...
+    ]
+}
+```
+
+
 ## "Regular" View Set Endpoints
 
 These endpoints based on Django REST Framework's ModelViewSet and provide the basic CRUD functionality for each model. These endpoints provide access to all model fields. Details on available fields can be found on the browsable API. If running a local server using the command `python models.py runserver`, you can access the browsable API at http://localhost:8000/api/. You must be logged in to access the browsable API and must be logged in as a superuser for POST, PUT, PATCH, or DELETE operations on certain endpoints.
