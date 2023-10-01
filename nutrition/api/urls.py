@@ -17,10 +17,10 @@ router.register(r'combineditemelements', views.CombinedItemElementViewSet)
 router.register(r'itemnutrients', views.ItemNutrientViewSet)
 router.register(r'itembioactives', views.ItemBioactiveViewSet)
 router.register(r'favoriteitems', views.FavoriteItemViewSet)
-router.register(r'nutritionalgoaltemplates', views.GoalTemplateViewSet)
+router.register(r'goaltemplates', views.GoalTemplateViewSet)
 router.register(r'goaltemplatenutrients', views.GoalTemplateNutrientViewSet)
-router.register(r'usernutritionalgoals', views.UserGoalViewSet)
-router.register(r'usernutritionalgoalnutrients', views.UserGoalNutrientViewSet)
+router.register(r'usergoals', views.UserGoalViewSet)
+router.register(r'usergoalnutrients', views.UserGoalNutrientViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

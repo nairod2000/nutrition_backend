@@ -10,12 +10,16 @@ class User(AbstractUser):
     height = models.PositiveIntegerField(blank=True, null=True)
     sex = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')], blank=True, null=True)
     is_pregnant = models.BooleanField(default=False)
+    is_lactating = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, related_name='user_set_nutrition', blank=True, verbose_name='groups')
     user_permissions = models.ManyToManyField(Permission, related_name='user_set_nutrition', blank=True, verbose_name='user permissions')
 
     def clean(self):
-        if self.sex == 'Male' and self.is_pregnant:
-            raise ValidationError("A male user cannot be pregnant.")
+        if self.sex == 'Male' and (self.is_pregnant or self.is_lactating):
+            raise ValidationError("A male user cannot be pregnant or lactating.")
+        
+        if self.is_pregnant and self.is_lactating:
+            raise ValidationError("A user cannot be both pregnant and lactating.")
 
     def __str__(self):
         return self.username
@@ -23,6 +27,7 @@ class User(AbstractUser):
 class Unit(models.Model):
     # Represents a unit of measurement, such as a gram or fluid ounce.
     name = models.CharField(max_length=10, unique=True)
+    abbreviation = models.CharField(max_length=7, unique=True)
     
     def __str__(self):
         return self.name
@@ -114,7 +119,6 @@ class ItemNutrient(models.Model):
     def __str__(self):
         return f"{self.item.name} - {self.nutrient.name}"
 
-
 class ItemBioactive(models.Model):
     # Represents a bioactive compound in an item.
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
@@ -134,16 +138,18 @@ class FavoriteItem(models.Model):
         return f"{self.user.username}'s favorite: {self.item.name}"
 
 class GoalTemplate(models.Model):
-    # Represents a template for a nutritional goal, such as fda recommended daily values or weight loss or gain.
+    # Represents a template for a goal, such as FDA recommended daily intake.
     name = models.CharField(max_length=50)
-    calories = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
+    sex = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')], blank=True, null=True)
+    isPregnant = models.BooleanField(default=False)
+    isLactating = models.BooleanField(default=False)
     nutrients = models.ManyToManyField(Nutrient, through='GoalTemplateNutrient', related_name='templates')
 
     def __str__(self):
         return self.name
     
 class GoalTemplateNutrient(models.Model):
-    # Links a nutrient to a nutritional goal template and specifies the recommended value for that nutrient.
+    # Links a nutrient to a goal template and specifies the recommended value for that nutrient.
     nutrient = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
     template = models.ForeignKey(GoalTemplate, on_delete=models.CASCADE)
     recommendedValue = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
@@ -152,12 +158,13 @@ class GoalTemplateNutrient(models.Model):
         return f"{self.template.name} - {self.nutrient.name}"
     
 class UserGoal(models.Model):
-    # Represents a user's nutritional goals.
+    # Represents a user's goals.
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100) # Name of goal, not user
     template = models.ForeignKey(GoalTemplate, on_delete=models.CASCADE)
     calories = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
     nutrients = models.ManyToManyField(Nutrient, through='UserGoalNutrient', related_name='goals')
+    isActive = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username}'s {self.name} Goal"
@@ -166,13 +173,27 @@ class UserGoal(models.Model):
         # Set the name field based on the selected template's name
         if not self.name:
             self.name = self.template.name
+
+        # If a new goal is created and the user has no other goals, set it as active
+        if not self.pk and not UserGoal.objects.filter(user=self.user).exists():
+            self.isActive = True
+        
+        # If a goal is set to active, set all other goals for the user to inactive
+        if self.isActive:
+            UserGoal.objects.filter(user=self.user).exclude(pk=self.pk).update(isActive=False)
+        
         super(UserGoal, self).save(*args, **kwargs)
+
+    def clean(self):
+        # Ensure that at least one goal is active
+        if not self.isActive and not UserGoal.objects.filter(user=self.user, isActive=True).exists():
+            raise ValidationError("At least one goal must be active.")
     
 class UserGoalNutrient(models.Model):
-    # Links a nutrient to a user's nutritional goal and specifies the recommended value for that nutrient.
+    # Links a nutrient to a user's goal and specifies the target value for that nutrient.
     nutrient = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
     goal = models.ForeignKey(UserGoal, on_delete=models.CASCADE)
-    recommendedValue = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
+    targetValue = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
 
     def __str__(self):
         return f"{self.goal.user.username}'s {self.goal.name} Goal - {self.nutrient.name}"

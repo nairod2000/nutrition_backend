@@ -7,7 +7,7 @@ class FavoriteItemInline(admin.TabularInline):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'age', 'weight', 'height', 'sex', 'is_pregnant', 'is_staff', 'is_superuser', 'date_joined', 'favorites')
+    list_display = ('username', 'email', 'age', 'weight', 'height', 'sex', 'is_pregnant', 'is_lactating', 'is_staff', 'is_superuser', 'date_joined', 'favorites')
     list_filter = ('is_staff', 'is_superuser', 'date_joined')
     inlines = [FavoriteItemInline]
     
@@ -65,7 +65,7 @@ class GoalTemplateNutrientInline(admin.TabularInline):
 
 @admin.register(GoalTemplate)
 class GoalTemplateAdmin(admin.ModelAdmin):
-    list_display = ('name', 'calories')
+    list_display = ('name', 'sex', 'isPregnant', 'isLactating')
     inlines = [GoalTemplateNutrientInline]
 
 @admin.register(GoalTemplateNutrient)
@@ -77,9 +77,9 @@ class UserGoalNutrientInline(admin.TabularInline):
 
 @admin.register(UserGoal)
 class UserGoalAdmin(admin.ModelAdmin):
-    list_display = ('user', 'name', 'template', 'calories')
+    list_display = ('user', 'name', 'template', 'calories', 'isActive')
     inlines = [UserGoalNutrientInline]
 
 @admin.register(UserGoalNutrient)
 class UserGoalNutrientAdmin(admin.ModelAdmin):
-    list_display = ('goal', 'nutrient', 'recommendedValue')
+    list_display = ('goal', 'nutrient', 'targetValue')

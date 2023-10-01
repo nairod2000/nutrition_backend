@@ -48,6 +48,8 @@ Content-Type: application/json
     "height": 64,
     "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
     "is_pregnant": false
+    "is_lactating": false
+    
 }
 ```
 Only the `username` and `password` fields are required in the request. All other fields are optional.
@@ -69,7 +71,8 @@ Only the `username` and `password` fields are required in the request. All other
     "weight": 180,
     "height": 64,
     "sex": "Male",
-    "is_pregnant": false,
+    "is_pregnant": false
+    "is_lactating": false,
     "groups": [],
     "user_permissions": []
 }
@@ -97,6 +100,7 @@ Content-Type: application/json
     "height": 64,
     "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
     "is_pregnant": false
+    "is_lactating": false
 }
 ```
 Only the `username` and `password` fields are required in the request. All other fields are optional.
@@ -119,7 +123,8 @@ Only the `username` and `password` fields are required in the request. All other
         "weight": 180,
         "height": 64,
         "sex": "Male",
-        "is_pregnant": false,
+        "is_pregnant": false
+        "is_lactating": false,
         "groups": [],
         "user_permissions": []
     },
@@ -151,6 +156,7 @@ Authorization: Token user_token
     "height": null,
     "sex": null,
     "is_pregnant": false
+    "is_lactating": false
 }
 ```
 
@@ -168,7 +174,8 @@ Authorization: Token user_token
     "weight": 180,
     "height": 64,
     "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
-    "is_pregnant": false,
+    "is_pregnant": false
+    "is_lactating": false,
 }
 ```
 All fields are optional in a PUT or PATCH request. If all are omitted, the request will behave similarly to a GET request.
@@ -184,7 +191,8 @@ All fields are optional in a PUT or PATCH request. If all are omitted, the reque
     "weight": 180,
     "height": 64,
     "sex": "Male",
-    "is_pregnant": false,
+    "is_pregnant": false
+    "is_lactating": false,
 }
 ```
 
@@ -385,17 +393,17 @@ These endpoints based on Django REST Framework's ModelViewSet and provide the ba
 - **Permissions:** Authenticated users only.
 
 ### Goal Templates
-**Endpoint:** `/api/nutritionalgoaltemplates/`
+**Endpoint:** `/api/goaltemplates/`
 - **Methods:**
-  - `GET`: Retrieve a list of all nutritional goal templates.
-  - `POST`: Create a new nutritional goal template.
+  - `GET`: Retrieve a list of all goal templates.
+  - `POST`: Create a new goal template.
 - **Permissions:** Admin users can modify, read-only for others.
 
-**Endpoint:** `/api/nutritionalgoaltemplates/{id}/`
+**Endpoint:** `/api/goaltemplates/{id}/`
 - **Methods:**
-  - `GET`: Retrieve a specific nutritional goal template by ID.
-  - `PUT/PATCH`: Update a specific nutritional goal template by ID.
-  - `DELETE`: Delete a specific nutritional goal template by ID.
+  - `GET`: Retrieve a specific goal template by ID.
+  - `PUT/PATCH`: Update a specific goal template by ID.
+  - `DELETE`: Delete a specific goal template by ID.
 - **Permissions:** Admin users can modify, read-only for others.
 
 ### Goal Template Nutrients
@@ -413,29 +421,29 @@ These endpoints based on Django REST Framework's ModelViewSet and provide the ba
 - **Permissions:** Admin users can modify, read-only for others.
 
 ### User Goals
-**Endpoint:** `/api/usernutritionalgoals/`
+**Endpoint:** `/api/usergoals/`
 - **Methods:**
-  - `GET`: Retrieve a list of all user nutritional goals.
-  - `POST`: Create a new user nutritional goal.
+  - `GET`: Retrieve a list of all user goals.
+  - `POST`: Create a new user goal.
 - **Permissions:** Authenticated users only.
 
-**Endpoint:** `/api/usernutritionalgoals/{id}/`
+**Endpoint:** `/api/usergoals/{id}/`
 - **Methods:**
-  - `GET`: Retrieve a specific user nutritional goal by ID.
-  - `PUT/PATCH`: Update a specific user nutritional goal by ID.
-  - `DELETE`: Delete a specific user nutritional goal by ID.
+  - `GET`: Retrieve a specific user goal by ID.
+  - `PUT/PATCH`: Update a specific user goal by ID.
+  - `DELETE`: Delete a specific user goal by ID.
 - **Permissions:** Authenticated users only.
 
 ### User Goal Nutrients
-**Endpoint:** `/api/usernutritionalgoalnutrients/`
+**Endpoint:** `/api/usergoalnutrients/`
 - **Methods:**
-  - `GET`: Retrieve a list of all user nutritional goal nutrients.
-  - `POST`: Create a new user nutritional goal nutrient.
+  - `GET`: Retrieve a list of all user goal nutrients.
+  - `POST`: Create a new user goal nutrient.
 - **Permissions:** Authenticated users only.
 
-**Endpoint:** `/api/usernutritionalgoalnutrients/{id}/`
+**Endpoint:** `/api/usergoalnutrients/{id}/`
 - **Methods:**
-  - `GET`: Retrieve a specific user nutritional goal nutrient by ID.
-  - `PUT/PATCH`: Update a specific user nutritional goal nutrient by ID.
-  - `DELETE`: Delete a specific user nutritional goal nutrient by ID.
+  - `GET`: Retrieve a specific user goal nutrient by ID.
+  - `PUT/PATCH`: Update a specific user goal nutrient by ID.
+  - `DELETE`: Delete a specific user goal nutrient by ID.
 - **Permissions:** Authenticated users only.
