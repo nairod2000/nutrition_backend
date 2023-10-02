@@ -43,9 +43,9 @@ Content-Type: application/json
     "last_name": "Doe",
     "email": "user@example.com",
     "is_staff": false,
-    "age": 30,
-    "weight": 180,
-    "height": 64,
+    "age": 30, // in years
+    "weight": 180, // in pounds
+    "height": 64, // in inches
     "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
     "is_pregnant": false
     "is_lactating": false
@@ -219,18 +219,18 @@ Authorization: Token user_token
 }
 ```
 
-## Goals
+## User Goal Management
 
 ### Generate User Goal
 
-This endpoint generates a user-specific nutrition goal based on user attributes and returns the goal's details, including calorie and nutrient targets.
+This endpoint generates a user-specific nutrition goal based on user attributes and returns the goal's details, including calorie and nutrient targets. Calorie target is calculated based on user age, weight, height, sex, whether pregnant or lactating, activity level, and diet goal. The macronutrients Carbohydrate, Fat, and Protein are calculated by dividing the calculated calorie target among them.
 
-- **Endpoint:** `/api/goal-generate/`
+- **Endpoint:** `/api/user-goal-generate/`
 - **Method:** POST
 
 **Request:**
 ```
-POST /api/goal-generate/
+POST /api/user-goal-generate/
 Content-Type: application/json
 Authorization: Token user_token
 ```
@@ -238,32 +238,137 @@ Authorization: Token user_token
 **Response:**
 ```
 {
-    "id": 1,
+    "id": 10,
     "name": "FDA RDIs for Males Ages 31 to 50",
-    "calories": "2950",
+    "calories": "2500",
     "isActive": true,
     "user": 1,
-    "template": 142,
+    "template": 15,
     "nutrients": [
         {
-            "id": 81,
-            "name": "Nutrient Name 1",
-            "targetValue": 100
+            "id": 100,
+            "nutrient": {
+                "id": 20,
+                "name": "Protein",
+                "unit": g
+            },
+            "targetValue": 80
         },
         {
-            "id": 82,
-            "name": "Nutrient Name 2",
-            "targetValue": 200
+            "id": 101,
+            "nutrient": {
+                "id": 21,
+                "name": "Vitamin C",
+                "unit": mg
+            },
+            "targetValue": 1000
         },
-                {
-            "id": 81,
-            "name": "Nutrient Name 3",
-            "targetValue": 12.5
-        },
-        ...
+        // Other UserGoalNutrient objects here
     ]
 }
 ```
+
+### Retrieve or Update User Goal
+
+- **Endpoint:** `/api/user-goal-update/{goal_id}/`
+- **Method:** GET (retrieve), PUT or PATCH (update)
+
+**Request (Full or Partial Update):**
+```
+PUT /api/user-goal-detail/{goal_id}/
+Content-Type: application/json
+Authorization: Token user_token
+{
+    "name": "New Goal Name",
+    "calories": 2000, // Updating calories will update target values for Carbohydrate, Fat, and Protein
+    "isActive": true,
+    // To update individual goal nutrients, use the endpoint /api/usergoalnutrients/{id}/
+}
+```
+
+**Response (Retrieve or Update):**
+```
+{
+    "id": 10,
+    "name": "FDA RDIs for Males Ages 31 to 50",
+    "calories": "2500",
+    "isActive": true,
+    "user": 1,
+    "template": 15,
+    "nutrients": [
+        {
+            "id": 100,
+            "nutrient": {
+                "id": 20,
+                "name": "Protein",
+                "unit": g
+            },
+            "targetValue": 80
+        },
+        {
+            "id": 101,
+            "nutrient": {
+                "id": 21,
+                "name": "Vitamin C",
+                "unit": mg
+            },
+            "targetValue": 1000
+        },
+        // Other UserGoalNutrient objects here
+    ]
+}
+```
+
+
+## Summary Statistics
+
+### Goal Nutrient Status
+
+This endpoint provides information about the nutrient status based on the user's active goal. It calculates the total consumption for each nutrient in the active goal based on items consumed by the user on the current date.
+
+- **Endpoint:** `/api/goal-nutrient-status/`
+- **Method:** GET
+
+**Request:**
+```
+GET /api/goal-nutrient-status/
+Content-Type: application/json
+Authorization: Token user_token
+```
+
+**Response:**
+```
+[
+    {
+        "nutrient_id": 1,
+        "nutrient_name": "Protein",
+        "nutrient_unit": "g",
+        "target_value": 50.0,
+        "total_consumed": 45.0
+    },
+    {
+        "nutrient_id": 2,
+        "nutrient_name": "Fat",
+        "nutrient_unit": "g",
+        "target_value": 70.0,
+        "total_consumed": 55.0
+    },
+    {
+        "nutrient_id": 3,
+        "nutrient_name": "Carbohydrate",
+        "nutrient_unit": "g",
+        "target_value": 130.0,
+        "total_consumed": 120.0
+    },
+    // ... (more nutrients)
+]
+```
+
+**Notes:**
+- This endpoint calculates the nutrient status based on the user's active goal.
+- It provides information on each nutrient, including the nutrient ID, name, unit, target value, and the total amount consumed by the user on the current date.
+
+This documentation outlines how to retrieve nutrient status information for the user's active goal using the `GET` request to `/api/goal-nutrient-status/`.
 
 
 ## "Regular" View Set Endpoints

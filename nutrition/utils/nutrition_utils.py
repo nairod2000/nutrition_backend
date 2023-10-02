@@ -1,8 +1,10 @@
-MALE_BMR_CONSTANT = 88.362
-FEMALE_BMR_CONSTANT = 447.593
-HEIGHT_CONSTANT = 4.799
-WEIGHT_CONSTANT = 13.397
-AGE_CONSTANT = 5.677
+from nutrition.models import UserGoalNutrient
+
+WEIGHT_CONSTANT = 4.536
+HEIGHT_CONSTANT = 15.88
+AGE_CONSTANT = 5
+MALE_BMR_CONSTANT = 5
+FEMALE_BMR_CONSTANT = -161
 
 ACTIVITY_MULTIPLIERS = {
     'Sedentary': 1.2,
@@ -12,23 +14,35 @@ ACTIVITY_MULTIPLIERS = {
     'Extremely Active': 1.9,
 }
 
-
-# Calculate the number of calories a user should consume per day
-def calculate_calories(user):
+# Calculate BMR using Mifflin-St Jeor Equation
+def calculate_bmr(user):
+    bmr = (WEIGHT_CONSTANT * user.weight) + (HEIGHT_CONSTANT * user.height) - (AGE_CONSTANT * user.age)
     if user.sex == 'Male':
-        bmr = (WEIGHT_CONSTANT * user.weight) + (HEIGHT_CONSTANT * user.height) - (AGE_CONSTANT * user.age) + MALE_BMR_CONSTANT
+        bmr += MALE_BMR_CONSTANT
     else:
-        bmr = (WEIGHT_CONSTANT * user.weight) + (HEIGHT_CONSTANT * user.height) - (AGE_CONSTANT * user.age) + FEMALE_BMR_CONSTANT
+        bmr += FEMALE_BMR_CONSTANT
+    return bmr
 
+# Calculate TDEE and adjust for goals, pregnancy, and lactation
+def calculate_calories(user):
+    bmr = calculate_bmr(user)
     activity_level_multiplier = ACTIVITY_MULTIPLIERS.get(user.activity_level, 1.2)
-    adjusted_calories = bmr * activity_level_multiplier
+    tdee = bmr * activity_level_multiplier
+
+    if user.is_pregnant:
+        # Add an extra 300-500 calories per day during pregnancy
+        tdee += 300  # We could adjust this value based on specific recommendations
+
+    if user.is_lactating:
+        # Add an extra 500 calories per day during lactation
+        tdee += 500  # We could adjust this value based on specific recommendations
 
     if user.diet_goal == 'Lose Weight':
-        calculated_calories = adjusted_calories - 500
+        calculated_calories = tdee - 500  # Create a caloric deficit of 500 calories/day
     elif user.diet_goal == 'Gain Weight':
-        calculated_calories = adjusted_calories + 500
+        calculated_calories = tdee + 500  # Create a caloric surplus of 500 calories/day
     else:
-        calculated_calories = adjusted_calories
+        calculated_calories = tdee  # Maintain current weight
 
     return calculated_calories
 
@@ -60,3 +74,21 @@ def calculate_macronutrients(calories, age):
         nutrient_distribution[nutrient] = calorie_value
 
     return nutrient_distribution
+
+def serialize_goal_nutrients(goal):
+    goal_nutrients = UserGoalNutrient.objects.filter(goal=goal)
+    goal_nutrients_data = []
+
+    for goal_nutrient in goal_nutrients:
+        nutrient_data = {
+            "id": goal_nutrient.id,
+            "nutrient": {
+                "id": goal_nutrient.nutrient.id,
+                "name": goal_nutrient.nutrient.name,
+                "unit": goal_nutrient.nutrient.unit.abbreviation,
+            },
+            "targetValue": goal_nutrient.targetValue,
+        }
+        goal_nutrients_data.append(nutrient_data)
+
+    return goal_nutrients_data

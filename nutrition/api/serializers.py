@@ -20,6 +20,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'username': {'required': False},
         }
 
+# Nutrient Serializers
+
+class NutrientStatusSerializer(serializers.Serializer):
+    nutrient_name = serializers.CharField()
+    nutrient_unit = serializers.CharField(max_length=10)
+    target_value = serializers.DecimalField(max_digits=7, decimal_places=2)
+    total_consumed = serializers.DecimalField(max_digits=8, decimal_places=2)
 
 # Model Serializers
 
@@ -93,10 +100,8 @@ class GoalTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoalTemplate
         fields = '__all__'
-    nutrients = NutrientSerializer(many=True, read_only=True)
 
 class UserGoalNutrientSerializer(serializers.ModelSerializer):
-    
     class Meta:
         model = UserGoalNutrient
         fields = '__all__'
@@ -105,4 +110,4 @@ class UserGoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserGoal
         fields = '__all__'
-    nutrients = NutrientSerializer(many=True, read_only=True)
+
