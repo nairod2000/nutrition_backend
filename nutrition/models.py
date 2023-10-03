@@ -1,13 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 class User(AbstractUser):
     # Represents a user of the application.
-    age = models.PositiveIntegerField(blank=True, null=True)
-    weight = models.PositiveIntegerField(blank=True, null=True)
-    height = models.PositiveIntegerField(blank=True, null=True)
+    # age is in years
+    age = models.PositiveIntegerField(blank=True, null=True, validators=[MaxValueValidator(120)])
+    # weight is in pounds
+    weight = models.PositiveIntegerField(blank=True, null=True, validators=[MaxValueValidator(1000)])
+    # height is in inches
+    height = models.PositiveIntegerField(blank=True, null=True, validators=[MaxValueValidator(100)])
     sex = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')], blank=True, null=True)
     is_pregnant = models.BooleanField(default=False)
     is_lactating = models.BooleanField(default=False)
@@ -63,7 +66,7 @@ class Item(models.Model):
     # Represents a distinct edible item, including basic and packaged foods and supplements.
     name = models.TextField()
     barcode = models.CharField(max_length=50, null=True, blank=True)
-    calories = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
+    calories = models.PositiveIntegerField(validators=[MaxValueValidator(100000)])
     servingSize = models.ForeignKey(ServingSize, on_delete=models.CASCADE)
     nutrients = models.ManyToManyField(Nutrient, through='ItemNutrient', related_name='items')
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) # Creator of item (if applicable)
@@ -152,8 +155,8 @@ class GoalTemplate(models.Model):
     sex = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')], blank=True, null=True)
     isPregnant = models.BooleanField(default=False)
     isLactating = models.BooleanField(default=False)
-    ageMin = models.PositiveIntegerField(default=0)
-    ageMax = models.PositiveIntegerField(default=120)
+    ageMin = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(120)])
+    ageMax = models.PositiveIntegerField(default=120, validators=[MaxValueValidator(120)])
     nutrients = models.ManyToManyField(Nutrient, through='GoalTemplateNutrient', related_name='templates')
 
     def __str__(self):
@@ -173,7 +176,7 @@ class UserGoal(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100, unique='True') # Name of goal, not user
     template = models.ForeignKey(GoalTemplate, on_delete=models.CASCADE)
-    calories = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
+    calories = models.PositiveIntegerField(validators=[MaxValueValidator(100000)])
     nutrients = models.ManyToManyField(Nutrient, through='UserGoalNutrient', related_name='goals')
     isActive = models.BooleanField(default=False)
 

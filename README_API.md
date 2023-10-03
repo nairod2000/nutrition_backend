@@ -273,7 +273,7 @@ Authorization: Token user_token
 - **Endpoint:** `/api/user-goal-update/{goal_id}/`
 - **Method:** GET (retrieve), PUT or PATCH (update)
 
-**Request (Full or Partial Update):**
+**Request (Update):**
 ```
 PUT /api/user-goal-detail/{goal_id}/
 Content-Type: application/json
@@ -285,6 +285,11 @@ Authorization: Token user_token
     // To update individual goal nutrients, use the endpoint /api/usergoalnutrients/{id}/
 }
 ```
+Note for request:
+ - The `user` and `template` fields cannot be updated.
+ - The `nutrients` field is read-only. To update individual goal nutrients, use the endpoint `/api/usergoalnutrients/{id}/`.
+ - To ensure one and only one goal is active per user, the `isActive` field can only be set to `true`, and doing so will deactivate all other goals for the currently authenticated user. To deactivate any given goal, set `isActive` to `true` for any other goal for the user.
+ 
 
 **Response (Retrieve or Update):**
 ```
@@ -363,12 +368,6 @@ Authorization: Token user_token
     // ... (more nutrients)
 ]
 ```
-
-**Notes:**
-- This endpoint calculates the nutrient status based on the user's active goal.
-- It provides information on each nutrient, including the nutrient ID, name, unit, target value, and the total amount consumed by the user on the current date.
-
-This documentation outlines how to retrieve nutrient status information for the user's active goal using the `GET` request to `/api/goal-nutrient-status/`.
 
 
 ## "Regular" View Set Endpoints

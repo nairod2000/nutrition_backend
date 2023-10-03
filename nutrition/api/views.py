@@ -10,7 +10,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -203,6 +204,18 @@ class UserGoalUpdateView(RetrieveUpdateAPIView):
                 if not created:
                     user_goal_nutrient.targetValue = target_value
                     user_goal_nutrient.save()
+
+        # Check if 'isActive' field is being updated
+        if 'isActive' in request.data:
+            activating = request.data['isActive']
+            if activating:
+                # Activate the goal and deactivate other goals for the same user
+                UserGoal.objects.filter(user=instance.user).exclude(pk=instance.pk).update(isActive=False)
+                instance.isActive = activating
+                instance.save()
+            else:
+                # Prevent deactivating the goal.
+                raise ValidationError("To deactivate this goal, set isActive to true for another goal.")
 
         serialized_data = serializer.data
         serialized_data["nutrients"] = serialize_goal_nutrients(instance)
