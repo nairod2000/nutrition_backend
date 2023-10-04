@@ -67,9 +67,9 @@ Only the `username` and `password` fields are required in the request. All other
     "is_staff": false,
     "is_active": true,
     "date_joined": "2023-09-21T18:37:29.183846-05:00",
-    "age": 30,
-    "weight": 180,
-    "height": 64,
+    "age": 30, // in years
+    "weight": 180, // in pounds
+    "height": 64, // in inches
     "sex": "Male",
     "is_pregnant": false
     "is_lactating": false,
@@ -95,9 +95,9 @@ Content-Type: application/json
     "last_name": "Doe",
     "email": "user@example.com",
     "is_staff": false,
-    "age": 30,
-    "weight": 180,
-    "height": 64,
+    "age": 30, // in years
+    "weight": 180, // in pounds
+    "height": 64, // in inches
     "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
     "is_pregnant": false
     "is_lactating": false
@@ -119,9 +119,9 @@ Only the `username` and `password` fields are required in the request. All other
         "is_staff": false,
         "is_active": true,
         "date_joined": "2023-09-21T19:03:26.761719-05:00",
-        "age": 30,
-        "weight": 180,
-        "height": 64,
+        "age": 30, // in years
+        "weight": 180, // in pounds
+        "height": 64, // in inches
         "sex": "Male",
         "is_pregnant": false
         "is_lactating": false,
@@ -151,10 +151,10 @@ Authorization: Token user_token
     "email": "user@example.com",
     "first_name": "John",
     "last_name": "Doe",
-    "age": null,
-    "weight": null,
-    "height": null,
-    "sex": null,
+    "age": 30, // in years
+    "weight": 180, // in pounds
+    "height": 64, // in inches
+    "sex": Male,
     "is_pregnant": false
     "is_lactating": false
 }
@@ -170,9 +170,9 @@ Authorization: Token user_token
     "email": "new_email@example.com",
     "first_name": "NewFirstName",
     "last_name": "NewLastName"
-    "age": 30,
-    "weight": 180,
-    "height": 64,
+    "age": 30, // in years
+    "weight": 180, // in pounds
+    "height": 64, // in inches
     "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
     "is_pregnant": false
     "is_lactating": false,
@@ -187,9 +187,9 @@ All fields are optional in a PUT or PATCH request. If all are omitted, the reque
     "email": "new_email@example.com",
     "first_name": "NewFirstName",
     "last_name": "NewLastName"
-    "age": 30,
-    "weight": 180,
-    "height": 64,
+    "age": 30, // in years
+    "weight": 180, // in pounds
+    "height": 64, // in inches
     "sex": "Male",
     "is_pregnant": false
     "is_lactating": false,
@@ -234,6 +234,9 @@ POST /api/user-goal-generate/
 Content-Type: application/json
 Authorization: Token user_token
 ```
+Note for request:
+ - The `age`, `weight`, `height`, `sex`, `is_pregnant`, `is_lactating`, `activity_level`, and `diet_goal` of the authenticated `User` must be defined prior to posting to this endpoint.
+
 
 **Response:**
 ```

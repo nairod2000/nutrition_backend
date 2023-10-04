@@ -94,6 +94,11 @@ class UserGoalGenerateView(CreateAPIView):
         # Get the user associated with the token
         user = request.user
 
+        # Check if any of the required fields required for goal generation are None or empty
+        required_fields = ['age', 'weight', 'height', 'sex', 'is_pregnant', 'is_lactating' 'activity_level', 'diet_goal']
+        if any(getattr(user, field, None) is None or getattr(user, field) == '' for field in required_fields):
+            return Response({'error': 'Required user attributes are missing or empty.'}, status=status.HTTP_400_BAD_REQUEST)
+
         # Determine the GoalTemplate based on user attributes (sex, is_pregnant, is_lactating, age)
         goal_template = GoalTemplate.objects.filter(
             sex=user.sex,
@@ -106,7 +111,7 @@ class UserGoalGenerateView(CreateAPIView):
         if not goal_template:
             return Response({'detail': 'No suitable GoalTemplate found for the user.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Calculate the calories for the user
+        # Calculate the calories and macronutrient distribution for the user
         calculated_calories = calculate_calories(user)
         nutrient_distribution = calculate_macronutrients(calculated_calories, user.age)
 
@@ -183,27 +188,26 @@ class UserGoalUpdateView(RetrieveUpdateAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        # Check if 'calories' field is being updated
+        # Update 'calories'
         if 'calories' in request.data:
             new_calories = request.data['calories']
             instance.calories = new_calories
 
-            # Recalculate nutrient distribution based on new calories and user age
-            nutrient_distribution = calculate_macronutrients(new_calories, instance.user.age)
+            # If user age is defined, update the macronutrient distribution based on the new calories
+            if instance.user.age is not None and instance.user.age != '':
+                nutrient_distribution = calculate_macronutrients(new_calories, instance.user.age)
+                for nutrient_name, target_value in nutrient_distribution.items():
+                    nutrient, _ = Nutrient.objects.get_or_create(name=nutrient_name)
+                    user_goal_nutrient, created = UserGoalNutrient.objects.get_or_create(
+                        goal=instance,
+                        nutrient=nutrient,
+                        defaults={'targetValue': target_value}
+                    )
 
-            # Update or create UserGoalNutrients for 'protein', 'fat', and 'carbohydrate'
-            for nutrient_name, target_value in nutrient_distribution.items():
-                nutrient, _ = Nutrient.objects.get_or_create(name=nutrient_name)
-                user_goal_nutrient, created = UserGoalNutrient.objects.get_or_create(
-                    goal=instance,
-                    nutrient=nutrient,
-                    defaults={'targetValue': target_value}
-                )
-
-                # If the UserGoalNutrient was not created (already exists), update the targetValue
-                if not created:
-                    user_goal_nutrient.targetValue = target_value
-                    user_goal_nutrient.save()
+                    # If the UserGoalNutrient was not created (already exists), update the targetValue
+                    if not created:
+                        user_goal_nutrient.targetValue = target_value
+                        user_goal_nutrient.save()
 
         # Check if 'isActive' field is being updated
         if 'isActive' in request.data:
@@ -213,10 +217,11 @@ class UserGoalUpdateView(RetrieveUpdateAPIView):
                 UserGoal.objects.filter(user=instance.user).exclude(pk=instance.pk).update(isActive=False)
                 instance.isActive = activating
                 instance.save()
-            else:
+            else: # Attempting to deactivate the goal
                 # Prevent deactivating the goal.
                 raise ValidationError("To deactivate this goal, set isActive to true for another goal.")
 
+        # Serialize and add goal nutrients to the response
         serialized_data = serializer.data
         serialized_data["nutrients"] = serialize_goal_nutrients(instance)
 

@@ -55,7 +55,7 @@ def calculate_macronutrients(calories, age):
         'Adults': {'Fat': 0.225, 'Carbohydrate': 0.525, 'Protein': 0.25},
     }
 
-    # Calorie values per gram for each macronutrient
+    # Calorie values per gram for each macronutrient based on approximate Atwater factors
     calorie_per_gram = {'Fat': 9, 'Carbohydrate': 4, 'Protein': 4}
 
     # Determine the age group based on the provided 'age' parameter
@@ -75,6 +75,7 @@ def calculate_macronutrients(calories, age):
 
     return nutrient_distribution
 
+# Format nutrient data for use in the frontend
 def serialize_goal_nutrients(goal):
     goal_nutrients = UserGoalNutrient.objects.filter(goal=goal)
     goal_nutrients_data = []
