@@ -47,12 +47,16 @@ Content-Type: application/json
     "weight": 180, // in pounds
     "height": 64, // in inches
     "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
-    "is_pregnant": false
-    "is_lactating": false
-    
+    "is_pregnant": false,
+    "is_lactating": false,
+    "activity_level": "Lightly Active",
+    "diet_goal": "Lose Weight"  
 }
 ```
-Only the `username` and `password` fields are required in the request. All other fields are optional.
+Notes for request:
+ - Only the `username` and `password` fields are required in the request. All other fields are optional.
+ - Valid values for activity_level: "Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extremely Active"
+ - Valid values for diet_goal: "Lose Weight", "Maintain Weight", "Gain Weight"
 
 **Response:**
 ```
@@ -71,7 +75,7 @@ Only the `username` and `password` fields are required in the request. All other
     "weight": 180, // in pounds
     "height": 64, // in inches
     "sex": "Male",
-    "is_pregnant": false
+    "is_pregnant": false,
     "is_lactating": false,
     "groups": [],
     "user_permissions": []
@@ -99,11 +103,16 @@ Content-Type: application/json
     "weight": 180, // in pounds
     "height": 64, // in inches
     "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
-    "is_pregnant": false
-    "is_lactating": false
+    "is_pregnant": false,
+    "is_lactating": false,
+    "activity_level": "Lightly Active",
+    "diet_goal": "Lose Weight"  
 }
 ```
-Only the `username` and `password` fields are required in the request. All other fields are optional.
+Notes for request:
+ - Only the `username` and `password` fields are required in the request. All other fields are optional.
+ - Valid values for activity_level: "Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extremely Active"
+ - Valid values for diet_goal: "Lose Weight", "Maintain Weight", "Gain Weight"
 
 **Response:**
 ```
@@ -155,7 +164,7 @@ Authorization: Token user_token
     "weight": 180, // in pounds
     "height": 64, // in inches
     "sex": Male,
-    "is_pregnant": false
+    "is_pregnant": false,
     "is_lactating": false
 }
 ```
@@ -174,8 +183,8 @@ Authorization: Token user_token
     "weight": 180, // in pounds
     "height": 64, // in inches
     "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
-    "is_pregnant": false
-    "is_lactating": false,
+    "is_pregnant": false,
+    "is_lactating": false
 }
 ```
 All fields are optional in a PUT or PATCH request. If all are omitted, the request will behave similarly to a GET request.

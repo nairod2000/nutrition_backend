@@ -15,7 +15,7 @@ class ResetPasswordEmailSerializer(serializers.Serializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'age', 'weight', 'height', 'sex', 'is_pregnant', 'is_lactating']
+        fields = ['username', 'email', 'first_name', 'last_name', 'age', 'weight', 'height', 'sex', 'is_pregnant', 'is_lactating', 'activity_level', 'diet_goal']
         extra_kwargs = {
             'username': {'required': False},
         }
