@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-of$co_&s$w&fa!dqehj(ozy-^=0!ugvcfc$8v@75sn(2abx@4@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'nutrition.apps.NutritionConfig',
     'rest_framework',
     'rest_framework.authtoken',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -51,6 +52,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 CSRF_EXEMPT_VIEW = ['change-password', 'password-reset', 'password-reset_done', 'password-reset-confirm', 'password-reset-complete',]
@@ -144,3 +146,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
 }
+
+# CORS Configuration
+CORS_ALLOW_ALL_ORIGINS = True 
