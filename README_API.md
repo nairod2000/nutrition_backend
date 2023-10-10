@@ -232,10 +232,22 @@ Authorization: Token user_token
 
 ### Generate User Goal
 
-This endpoint generates a user-specific nutrition goal based on user attributes and returns the goal's details, including calorie and nutrient targets. Calorie target is calculated based on user age, weight, height, sex, whether pregnant or lactating, activity level, and diet goal. The macronutrients Carbohydrate, Fat, and Protein are calculated by dividing the calculated calorie target among them.
-
-- **Endpoint:** `/api/user-goal-generate/`
+- **Endpoint:** `/api/goal-generate/`
 - **Method:** POST
+
+
+This endpoint generates a user-specific nutrition goal based on user attributes and returns the goal's details, including calorie and nutrient targets.
+
+Calorie target is calculated using a method based on the Mifflin-St Jeor Equation and relies on user age, weight, height, sex, whether pregnant or lactating, activity level, and diet goal. If any of the user attributes `sex`, `age`, `is_pregnant`, or `is_lactating` are undefined, the endpoint will use the following defaults: `is_pregnant` and `is_lactating` default to `false` and `diet_goal` defaults to 'Maintain Weight'. (This does not modify the actual user attributes.) If any of the user attributes `age`, `weight`, `height`, `sex`, or `activity_level` are undefined, the calorie target will be set to a default value of 2000.
+
+The targets for the macronutrients Carbohydrate, Fat, and Protein are calculated by dividing the calculated calorie target among them based the user age and FDA recommendations based on age. For the purpose of determining macronutrients, if the user attribute `age` is undefined, the endpoint will use the default age of 30. (This does not modify the actual user attribute.)
+ 
+Micronutrient targets are determined based on FDA recommendations given user sex, age, and whether pregnant or lactating. For the purpose of determining micronutrient targets, if any of the user attributes `sex`, `age`, `is_pregnant`, or `is_lactating` are undefined, the endpoint will use the following defaults: `sex` defaults to 'Male', `age` defaults to 30, and `is_pregnant` and `is_lactating` default to `false`. (This does not modify the actual user attributes.)
+
+If the user attribute `sex` is undefined, the `name` attribute of the new goal will default to 'Nutritional Goal'.
+
+If a goal with the same name already exists, a request will update the attributes of the existing goal instead of generating a new one.
+
 
 **Request:**
 ```
@@ -243,9 +255,6 @@ POST /api/user-goal-generate/
 Content-Type: application/json
 Authorization: Token user_token
 ```
-Note for request:
- - The `age`, `weight`, `height`, `sex`, `is_pregnant`, `is_lactating`, `activity_level`, and `diet_goal` of the authenticated `User` must be defined prior to posting to this endpoint.
-
 
 **Response:**
 ```
@@ -280,14 +289,15 @@ Note for request:
 }
 ```
 
+
 ### Retrieve or Update User Goal
 
-- **Endpoint:** `/api/user-goal-update/{goal_id}/`
+- **Endpoint:** `/api/goal-update/{goal_id}/`
 - **Method:** GET (retrieve), PUT or PATCH (update)
 
 **Request (Update):**
 ```
-PUT /api/user-goal-detail/{goal_id}/
+PUT /api/goal-update/{goal_id}/
 Content-Type: application/json
 Authorization: Token user_token
 {

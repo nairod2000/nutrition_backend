@@ -94,41 +94,49 @@ class UserGoalGenerateView(CreateAPIView):
         # Get the user associated with the token
         user = request.user
 
-        # Check if any of the required fields required for goal generation are None or empty
-        required_fields = ['age', 'weight', 'height', 'sex', 'is_pregnant', 'is_lactating' 'activity_level', 'diet_goal']
-        if any(getattr(user, field, None) is None or getattr(user, field) == '' for field in required_fields):
-            return Response({'error': 'Required user attributes are missing or empty.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Default values for undefined User attributes
+        sex = user.sex or 'Male'
+        age = user.age or 30
+        is_pregnant = user.is_pregnant or False
+        is_lactating = user.is_lactating or False
 
         # Determine the GoalTemplate based on user attributes (sex, is_pregnant, is_lactating, age)
         goal_template = GoalTemplate.objects.filter(
-            sex=user.sex,
-            isPregnant=user.is_pregnant,
-            isLactating=user.is_lactating,
-            ageMin__lte=user.age,
-            ageMax__gte=user.age
+            sex=sex,
+            isPregnant=is_pregnant,
+            isLactating=is_lactating,
+            ageMin__lte=age,
+            ageMax__gte=age
         ).first()
 
         if not goal_template:
             return Response({'detail': 'No suitable GoalTemplate found for the user.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Calculate the calories and macronutrient distribution for the user
-        calculated_calories = calculate_calories(user)
-        nutrient_distribution = calculate_macronutrients(calculated_calories, user.age)
+        # Calculate the calories for the user
+        # Check if any of the required fields required for calorie calculation is None or empty
+        calorie_required_fields = ['age', 'weight', 'height', 'sex', 'activity_level']
+        if any(getattr(user, field, None) is None or getattr(user, field) == '' for field in calorie_required_fields):
+            calories = 2000
+        else:
+            calories = calculate_calories(user)
+        
+        # Calculate the macronutrient distribution for the user
+        nutrient_distribution = calculate_macronutrients(calories, age)
 
         # Try to get an existing UserGoal with the same name
         user_goal, created = UserGoal.objects.get_or_create(
             user=user,
-            name=goal_template.name,
+            name=(goal_template.name if user.sex else 'Nutritional Goal'),
             defaults={
                 'template': goal_template,
-                'calories': calculated_calories
+                'calories': calories
             }
         )
 
         # If the UserGoal was not created (already exists), update its attributes
         if not created:
             user_goal.template = goal_template
-            user_goal.calories = calculated_calories
+            user_goal.calories = calories
             user_goal.save()
 
         # Copy GoalTemplateNutrients to UserGoalNutrients
@@ -219,7 +227,7 @@ class UserGoalUpdateView(RetrieveUpdateAPIView):
                 instance.save()
             else: # Attempting to deactivate the goal
                 # Prevent deactivating the goal.
-                raise ValidationError("To deactivate this goal, set isActive to true for another goal.")
+                raise ValidationError("To deactivate this goal, set another goal as active.")
 
         # Serialize and add goal nutrients to the response
         serialized_data = serializer.data
