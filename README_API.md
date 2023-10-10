@@ -235,7 +235,6 @@ Authorization: Token user_token
 - **Endpoint:** `/api/goal-generate/`
 - **Method:** POST
 
-
 This endpoint generates a user-specific nutrition goal based on user attributes and returns the goal's details, including calorie and nutrient targets.
 
 Calorie target is calculated using a method based on the Mifflin-St Jeor Equation and relies on user age, weight, height, sex, whether pregnant or lactating, activity level, and diet goal. If any of the user attributes `sex`, `age`, `is_pregnant`, or `is_lactating` are undefined, the endpoint will use the following defaults: `is_pregnant` and `is_lactating` default to `false` and `diet_goal` defaults to 'Maintain Weight'. (This does not modify the actual user attributes.) If any of the user attributes `age`, `weight`, `height`, `sex`, or `activity_level` are undefined, the calorie target will be set to a default value of 2000.
@@ -244,10 +243,7 @@ The targets for the macronutrients Carbohydrate, Fat, and Protein are calculated
  
 Micronutrient targets are determined based on FDA recommendations given user sex, age, and whether pregnant or lactating. For the purpose of determining micronutrient targets, if any of the user attributes `sex`, `age`, `is_pregnant`, or `is_lactating` are undefined, the endpoint will use the following defaults: `sex` defaults to 'Male', `age` defaults to 30, and `is_pregnant` and `is_lactating` default to `false`. (This does not modify the actual user attributes.)
 
-If the user attribute `sex` is undefined, the `name` attribute of the new goal will default to 'Nutritional Goal'.
-
-If a goal with the same name already exists, a request will update the attributes of the existing goal instead of generating a new one.
-
+If the user attribute `sex` is undefined, the `name` attribute of the new goal will default to 'Nutritional Goal'. Otherwise, it will be based on the GoalTemplate used to set the micronutrient targets and will be based on those same user attributes. If a goal with the same name already exists, a request will update the attributes of the existing goal instead of generating a new one.
 
 **Request:**
 ```
