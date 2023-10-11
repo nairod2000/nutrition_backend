@@ -27,10 +27,9 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_auth_token),
     path('user-create/', views.UserCreateView.as_view(), name='user_create'),
-    path('user-create-and-auth/', views.UserCreateAndAuthView.as_view(), name='user_create_and_auth'),
-    path('user-update/', views.UserUpdateView.as_view(), name='user_update'),
+    path('user/', views.UserRetrieveUpdateView.as_view(), name='user_update'),
     path('change-password/', views.ChangePasswordView.as_view(), name='change_password'),
     path('goal-generate/', views.UserGoalGenerateView.as_view(), name='goal-generate'),
-    path('goal-update/<int:pk>/', views.UserGoalUpdateView.as_view(), name='goal-update'),
+    path('goal/<int:pk>/', views.UserGoalRetrieveUpdateView.as_view(), name='goal-update'),
     path('goal-nutrient-status/', views.GoalNutrientStatusView.as_view(), name='goal-nutrient-status'),
 ]

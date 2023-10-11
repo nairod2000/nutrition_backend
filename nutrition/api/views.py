@@ -39,24 +39,8 @@ class UserCreateView(CreateAPIView):
         serializer.validated_data['password'] = hashed_password
         serializer.save()
 
-# Create User and Authenticate (sign up and log in)
-class UserCreateAndAuthView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            password = serializer.validated_data.get('password')
-            hashed_password = make_password(password)
-            serializer.validated_data['password'] = hashed_password
-            user = serializer.save()
-            token, created = Token.objects.get_or_create(user=user)
-            # Return user and token in the response
-            return Response({'user': UserSerializer(user).data, 'token': token.key}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 # Retrieve and update the user's own profile information
-class UserUpdateView(RetrieveUpdateAPIView):
+class UserRetrieveUpdateView(RetrieveUpdateAPIView):
     serializer_class = UserUpdateSerializer
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
@@ -176,7 +160,7 @@ class UserGoalGenerateView(CreateAPIView):
 
         return Response(response_data, status=status.HTTP_201_CREATED)
         
-class UserGoalUpdateView(RetrieveUpdateAPIView):
+class UserGoalRetrieveUpdateView(RetrieveUpdateAPIView):
     queryset = UserGoal.objects.all()
     serializer_class = UserGoalSerializer
     authentication_classes = (TokenAuthentication,)
