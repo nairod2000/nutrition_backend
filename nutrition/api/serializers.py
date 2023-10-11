@@ -12,13 +12,19 @@ class ChangePasswordSerializer(serializers.Serializer):
 class ResetPasswordEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     
-class UserUpdateSerializer(serializers.ModelSerializer):
+class UserRetrieveUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email', 'first_name', 'last_name', 'age', 'weight', 'height', 'sex', 'is_pregnant', 'is_lactating', 'activity_level', 'diet_goal']
         extra_kwargs = {
             'username': {'required': False},
         }
+
+# Goal Serializers
+class UserActiveGoalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserGoal
+        fields = ['id']
 
 # Nutrient Serializers
 

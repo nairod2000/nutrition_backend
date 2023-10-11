@@ -82,68 +82,9 @@ Notes for request:
 }
 ```
 
-### Create a User and Authenticate (Sign Up and Log In)
-
-- **Endpoint:** `/api/user-create-and-auth/`
-- **Method:** POST
-
-**Request:**
-```
-POST /api/user-create-and-auth/
-Content-Type: application/json
-{
-    "is_superuser": false,
-    "username": "new_user",
-    "password": "new_password",
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "user@example.com",
-    "is_staff": false,
-    "age": 30, // in years
-    "weight": 180, // in pounds
-    "height": 64, // in inches
-    "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
-    "is_pregnant": false,
-    "is_lactating": false,
-    "activity_level": "Lightly Active",
-    "diet_goal": "Lose Weight"  
-}
-```
-Notes for request:
- - Only the `username` and `password` fields are required in the request. All other fields are optional.
- - Valid values for activity_level: "Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extremely Active"
- - Valid values for diet_goal: "Lose Weight", "Maintain Weight", "Gain Weight"
-
-**Response:**
-```
-{
-    "user": {
-        "id": 1,
-        "last_login": null,
-        "is_superuser": false,
-        "username": "new_user2",
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "user@example.com",
-        "is_staff": false,
-        "is_active": true,
-        "date_joined": "2023-09-21T19:03:26.761719-05:00",
-        "age": 30, // in years
-        "weight": 180, // in pounds
-        "height": 64, // in inches
-        "sex": "Male",
-        "is_pregnant": false
-        "is_lactating": false,
-        "groups": [],
-        "user_permissions": []
-    },
-    "token": "user_token"
-}
-```
-
 ### Retrieve and Update User Profile
 
-- **Endpoint:** `/api/user-update/`
+- **Endpoint:** `/api/user/`
 - **Method:** GET (retrieve), PUT or PATCH (update)
 
 **Request (Retrieve):**
@@ -288,7 +229,7 @@ Authorization: Token user_token
 
 ### Retrieve or Update User Goal
 
-- **Endpoint:** `/api/goal-update/{goal_id}/`
+- **Endpoint:** `/api/goal/{goal_id}/`
 - **Method:** GET (retrieve), PUT or PATCH (update)
 
 **Request (Update):**
@@ -342,6 +283,24 @@ Note for request:
 }
 ```
 
+### Retrieve Active Goal ID
+
+- **Endpoint:** `/api/active-goal/`
+- **Method:** GET (retrieve), PUT or PATCH (update)
+
+**Request:**
+```
+GET /api/active-goal/
+Content-Type: application/json
+Authorization: Token user_token
+```
+
+**Response:**
+```
+{
+    "id": 10
+}
+```
 
 ## Summary Statistics
 
