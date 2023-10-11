@@ -11,7 +11,7 @@ from rest_framework import generics, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView, RetrieveAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,7 +20,7 @@ from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedIt
 from nutrition.utils.nutrition_utils import calculate_calories, calculate_macronutrients, serialize_goal_nutrients
 
 from .permissions import IsAdminUserOrReadOnly
-from .serializers import ChangePasswordSerializer, UserRetrieveUpdateSerializer, UserActiveGoalSerializer , UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, FavoriteItemSerializer, GoalTemplateSerializer, GoalTemplateNutrientSerializer, UserGoalSerializer, UserGoalNutrientSerializer, NutrientStatusSerializer
+from .serializers import ChangePasswordSerializer, UserRetrieveUpdateSerializer, UserGoalIDSerializer , UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, FavoriteItemSerializer, GoalTemplateSerializer, GoalTemplateNutrientSerializer, UserGoalSerializer, UserGoalNutrientSerializer, NutrientStatusSerializer
 
 
 #######################
@@ -219,12 +219,22 @@ class UserGoalRetrieveUpdateView(RetrieveUpdateAPIView):
 
         return Response(serialized_data)
 
-class UserActiveGoalView(RetrieveAPIView):
-    serializer_class = UserActiveGoalSerializer
+class UserGoalsListView(ListAPIView):
+    serializer_class = UserGoalIDSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    # Retrieve the active goal ID for the authenticated user
+    # Retrieve a list of the user's goals
+    def get_queryset(self):
+        user = self.request.user
+        return user.usergoal_set.all()
+
+class UserActiveGoalView(RetrieveAPIView):
+    serializer_class = UserGoalIDSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    # Retrieve the user's active goal ID
     def get_object(self):
         user = self.request.user
         active_goal = user.usergoal_set.filter(isActive=True).first()

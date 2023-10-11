@@ -21,7 +21,7 @@ class UserRetrieveUpdateSerializer(serializers.ModelSerializer):
         }
 
 # Goal Serializers
-class UserActiveGoalSerializer(serializers.ModelSerializer):
+class UserGoalIDSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserGoal
         fields = ['id']

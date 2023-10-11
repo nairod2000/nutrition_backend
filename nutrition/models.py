@@ -174,7 +174,7 @@ class GoalTemplateNutrient(models.Model):
 class UserGoal(models.Model):
     # Represents a user's goals.
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100, unique='True') # Name of goal, not user
+    name = models.CharField(max_length=100) # Name of goal, not user
     template = models.ForeignKey(GoalTemplate, on_delete=models.CASCADE)
     calories = models.PositiveIntegerField(validators=[MaxValueValidator(100000)])
     nutrients = models.ManyToManyField(Nutrient, through='UserGoalNutrient', related_name='goals')

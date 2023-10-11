@@ -283,10 +283,41 @@ Note for request:
 }
 ```
 
-### Retrieve Active Goal ID
+### Retrieve List of User's Goal IDs
 
 - **Endpoint:** `/api/active-goal/`
-- **Method:** GET (retrieve), PUT or PATCH (update)
+- **Method:** GET
+
+**Request:**
+```
+GET /api/user-goals/
+Content-Type: application/json
+Authorization: Token user_token
+```
+
+**Response:**
+```
+{
+    "count": 2,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": 15
+        },
+        {
+            "id": 17
+        }
+    ]
+}
+```
+In the response, "next" and "previous" refer to the URL for the next or subsequent page of results, in case the response is paginated and there are more results than can be shown on a single page. If not, they are set to null.
+
+
+### Retrieve User's Active Goal ID
+
+- **Endpoint:** `/api/active-goal/`
+- **Method:** GET
 
 **Request:**
 ```
@@ -304,7 +335,7 @@ Authorization: Token user_token
 
 ## Summary Statistics
 
-### Goal Nutrient Status
+### User's Goal Nutrient Status
 
 This endpoint provides information about the nutrient status based on the user's active goal. It calculates the total consumption for each nutrient in the active goal based on items consumed by the user on the current date.
 

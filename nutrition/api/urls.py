@@ -31,6 +31,7 @@ urlpatterns = [
     path('change-password/', views.ChangePasswordView.as_view(), name='change_password'),
     path('goal-generate/', views.UserGoalGenerateView.as_view(), name='goal-generate'),
     path('goal/<int:pk>/', views.UserGoalRetrieveUpdateView.as_view(), name='goal-update'),
+    path('user-goals/', views.UserGoalsListView.as_view(), name='user-goals'),
     path('active-goal/', views.UserActiveGoalView.as_view(), name='active-goal'),
     path('goal-nutrient-status/', views.GoalNutrientStatusView.as_view(), name='goal-nutrient-status'),
 ]
