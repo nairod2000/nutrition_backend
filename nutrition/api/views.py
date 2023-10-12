@@ -3,13 +3,12 @@ from datetime import date
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.models import Group
 from django.contrib.auth.hashers import make_password
-from django.db.models import Sum
+from django.db.models import Sum, F
 from django.shortcuts import get_object_or_404
 
 
-from rest_framework import generics, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, SAFE_METHODS
@@ -248,39 +247,58 @@ class UserActiveGoalView(RetrieveAPIView):
 class GoalNutrientStatusView(APIView):
     def get(self, request):
         user = request.user
-        nutrient_status = []
-
-        # Find the user's active goal (isActive=True)
         user_active_goal = UserGoal.objects.filter(user=user, isActive=True).first()
 
         if user_active_goal:
             goal_nutrients = user_active_goal.usergoalnutrient_set.all()
+            
+            # Get all consumed items for the user for the current date
+            consumed_items = Consumed.objects.filter(
+                user=user,
+                consumedAt__date=date.today()
+            )
+            
+            # Calculate total consumed calories
+            total_consumed_calories = consumed_items.aggregate(
+                total_consumed_calories=Sum(F('item__calories') * F('portion'))
+            )['total_consumed_calories'] or 0
+
+            # Create a list of nutrient status objects and add the calories
+            nutrient_status = [
+                {
+                    "nutrient_id": 999,  # Arbitrary ID for calories
+                    "nutrient_name": "Calories",
+                    "nutrient_unit": "kcal",
+                    "target_value": user_active_goal.calories,
+                    "total_consumed": total_consumed_calories,
+                }
+            ]
 
             for goal_nutrient in goal_nutrients:
-                # Filter items once based on the common conditions
-                consumed_items = goal_nutrient.nutrient.itemnutrient_set.filter(
-                    item__consumed__user=user,
-                    item__consumed__consumedAt__date=date.today()
+                # Filter consumed items containing the goal nutrient
+                consumed_items_with_nutrient = consumed_items.filter(
+                    item__itemnutrient__nutrient=goal_nutrient.nutrient
                 )
 
-                total_consumed = sum(
-                    (item.amount * item.item.consumed_set.aggregate(
-                        total_consumed=Sum('portion')
-                    )['total_consumed'] or 0)
-                    for item in consumed_items
-                )
+                # Calculate total consumed nutrient
+                total_consumed_nutrient = consumed_items_with_nutrient.aggregate(
+                    total_consumed=Sum(F('portion') * F('item__itemnutrient__amount'))
+                )['total_consumed'] or 0
 
+                # Append the nutrient status to the list
                 nutrient_status.append({
                     "nutrient_id": goal_nutrient.nutrient.id,
                     "nutrient_name": goal_nutrient.nutrient.name,
                     "nutrient_unit": goal_nutrient.nutrient.unit.abbreviation,
                     "target_value": goal_nutrient.targetValue,
-                    "total_consumed": total_consumed,
+                    "total_consumed": total_consumed_nutrient,
                 })
 
-        # Serialize the nutrient status
-        serializer = NutrientStatusSerializer(nutrient_status, many=True)
-        return Response(serializer.data)
+            # Serialize the nutrient status
+            serializer = NutrientStatusSerializer(nutrient_status, many=True)
+            return Response(serializer.data)
+        else:
+            return Response({'message': 'No active goal found for the user.'}, status=status.HTTP_404_NOT_FOUND)
 
 
 #######################
