@@ -152,11 +152,6 @@ class UserGoalGenerateView(CreateAPIView):
                 user_goal_nutrient.targetValue = target_value
                 user_goal_nutrient.save()
 
-            # # If the UserGoalNutrient already exists, update the targetValue
-            # if not user_goal_nutrient._state.adding:
-            #     user_goal_nutrient.targetValue = target_value
-            #     user_goal_nutrient.save()
-
         # Serialize the UserGoal object
         serializer = self.get_serializer(user_goal)
         response_data = serializer.data
