@@ -64,14 +64,16 @@ class ChangePasswordView(APIView):
             return Response({'error': 'Incorrect old password.'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-#######################
-######## Goals ########
-#######################
+
+##########################
+### Generate User Goal ###
+##########################
 
 class UserGoalGenerateView(CreateAPIView):
     serializer_class = UserGoalSerializer
     queryset = UserGoal.objects.all()
-    permission_classes = [IsAuthenticated]
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
     def create(self, request, *args, **kwargs):
         # Get the user associated with the token
@@ -131,24 +133,29 @@ class UserGoalGenerateView(CreateAPIView):
                 defaults={'targetValue': nutrient.recommendedValue}
             )
 
-        # If the UserGoalNutrient was not created (already exists), update the targetValue
-        if not created:
-            user_goal_nutrient.targetValue = nutrient.recommendedValue
-            user_goal_nutrient.save()
+            # If the UserGoalNutrient was not created (already exists), update the targetValue
+            if not created:
+                user_goal_nutrient.targetValue = nutrient.recommendedValue
+                user_goal_nutrient.save()
 
 
         # Create or modify UserGoalNutrients for Carbohydrate, Fat, and Protein
         for nutrient_name, target_value in nutrient_distribution.items():
             nutrient, _ = Nutrient.objects.get_or_create(name=nutrient_name)
-            user_goal_nutrient, _ = UserGoalNutrient.objects.get_or_create(
+            user_goal_nutrient, created = UserGoalNutrient.objects.get_or_create(
                 goal=user_goal,
                 nutrient=nutrient,
                 defaults={'targetValue': target_value}
             )
-        # If the UserGoalNutrient already exists, update the targetValue
-        if not user_goal_nutrient._state.adding:
-            user_goal_nutrient.targetValue = target_value
-            user_goal_nutrient.save()
+            # If the UserGoalNutrient already exists, update the targetValue
+            if not created:
+                user_goal_nutrient.targetValue = target_value
+                user_goal_nutrient.save()
+
+            # # If the UserGoalNutrient already exists, update the targetValue
+            # if not user_goal_nutrient._state.adding:
+            #     user_goal_nutrient.targetValue = target_value
+            #     user_goal_nutrient.save()
 
         # Serialize the UserGoal object
         serializer = self.get_serializer(user_goal)
@@ -158,7 +165,12 @@ class UserGoalGenerateView(CreateAPIView):
         response_data["nutrients"] = serialize_goal_nutrients(user_goal)
 
         return Response(response_data, status=status.HTTP_201_CREATED)
-        
+
+
+####################################
+### Retreive or Update User Goal ###
+####################################
+
 class UserGoalRetrieveUpdateView(RetrieveUpdateAPIView):
     queryset = UserGoal.objects.all()
     serializer_class = UserGoalSerializer
@@ -218,6 +230,11 @@ class UserGoalRetrieveUpdateView(RetrieveUpdateAPIView):
 
         return Response(serialized_data)
 
+
+############################
+### List User's Goal IDs ###
+############################
+
 class UserGoalsListView(ListAPIView):
     serializer_class = UserGoalIDSerializer
     authentication_classes = (TokenAuthentication,)
@@ -226,7 +243,17 @@ class UserGoalsListView(ListAPIView):
     # Retrieve a list of the user's goals
     def get_queryset(self):
         user = self.request.user
-        return user.usergoal_set.all()
+        goals = user.usergoal_set.all()
+
+        if not goals:
+            return Response({'message': 'No goals found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return goals
+
+
+#################################
+### Get User's Active Goal ID ###
+#################################
 
 class UserActiveGoalView(RetrieveAPIView):
     serializer_class = UserGoalIDSerializer
@@ -237,6 +264,10 @@ class UserActiveGoalView(RetrieveAPIView):
     def get_object(self):
         user = self.request.user
         active_goal = user.usergoal_set.filter(isActive=True).first()
+
+        if not active_goal:
+            return Response({'message': 'No active goal found.'}, status=status.HTTP_404_NOT_FOUND)
+
         return active_goal
 
 
@@ -298,7 +329,7 @@ class GoalNutrientStatusView(APIView):
             serializer = NutrientStatusSerializer(nutrient_status, many=True)
             return Response(serializer.data)
         else:
-            return Response({'message': 'No active goal found for the user.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': 'No active goal found.'}, status=status.HTTP_404_NOT_FOUND)
 
 
 #######################
