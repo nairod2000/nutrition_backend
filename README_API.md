@@ -285,7 +285,7 @@ Note for request:
 
 ### Retrieve List of User's Goal IDs
 
-- **Endpoint:** `/api/active-goal/`
+- **Endpoint:** `/api/user-goals/`
 - **Method:** GET
 
 **Request:**
@@ -352,6 +352,13 @@ Authorization: Token user_token
 **Response:**
 ```
 [
+    {
+        "nutrient_id": 999,
+        "nutrient_name": "Calories",
+        "nutrient_unit": "kcal",
+        "target_value": 2000.0,
+        "total_consumed": 2050.0
+    },
     {
         "nutrient_id": 1,
         "nutrient_name": "Protein",

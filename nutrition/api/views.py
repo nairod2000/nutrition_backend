@@ -186,6 +186,11 @@ class UserGoalRetrieveUpdateView(RetrieveUpdateAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
+        # Update 'name' field if it's in the request data
+        if 'name' in request.data:
+            new_name = request.data['name']
+            instance.name = new_name
+
         # Update 'calories'
         if 'calories' in request.data:
             new_calories = request.data['calories']
@@ -218,6 +223,8 @@ class UserGoalRetrieveUpdateView(RetrieveUpdateAPIView):
             else: # Attempting to deactivate the goal
                 # Prevent deactivating the goal.
                 raise ValidationError("To deactivate this goal, set another goal as active.")
+
+        instance.save()
 
         # Serialize and add goal nutrients to the response
         serialized_data = serializer.data
