@@ -29,6 +29,7 @@ class UserGoalIDSerializer(serializers.ModelSerializer):
 # Nutrient Serializers
 
 class NutrientStatusSerializer(serializers.Serializer):
+    nutrient_id = serializers.IntegerField()
     nutrient_name = serializers.CharField()
     nutrient_unit = serializers.CharField(max_length=10)
     target_value = serializers.DecimalField(max_digits=7, decimal_places=2)

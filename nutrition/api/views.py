@@ -299,7 +299,7 @@ class GoalNutrientStatusView(APIView):
             # Create a list of nutrient status objects and add the calories
             nutrient_status = [
                 {
-                    "nutrient_id": 999,  # Arbitrary ID for calories
+                    "nutrient_id": -1,  # Arbitrary ID for calories
                     "nutrient_name": "Calories",
                     "nutrient_unit": "kcal",
                     "target_value": user_active_goal.calories,
