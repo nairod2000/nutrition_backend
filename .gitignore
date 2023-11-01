@@ -198,3 +198,6 @@ dev/Scripts/dotenv.exe
 dev/Scripts/Activate.ps1
 .gitignore
 .gitignore
+nbd/Scripts/tqdm.exe
+data/linecounter.txt
+data/linecounter.py

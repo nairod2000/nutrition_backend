@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from nutrition.models import Item, ServingSize, Nutrient, Unit, ItemNutrient
 import re
+from tqdm import tqdm
 
 
 def isAllZero(code):
@@ -34,7 +35,7 @@ class Command(BaseCommand):
         try:
             # Open the CSV file and read its contents
             with open(jsonl_file,'r',encoding='utf-8') as file:
-                for food_item in file:
+                for food_item in tqdm(file,total=2980745):
                     # Load the JSON data from each line
                     data = json.loads(food_item)
                     if isAllZero(data.get('code')) or data.get('product_name') is None or data.get('nutriments') is None or data.get('serving_size') is None or data.get('nutriments').get('energy-kcal_100g') is None or data.get('serving_size').isalpha():
@@ -74,9 +75,8 @@ class Command(BaseCommand):
                     item.save()
 
 
-                    print("Item successfully created")
 
-
+            print("Imported {} items from {}".format(Item.objects.count(), jsonl_file))
 
         except FileNotFoundError:
             self.stdout.write(self.style.ERROR('JSONL file not found. Please check the file path.'))
