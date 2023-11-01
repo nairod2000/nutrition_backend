@@ -54,7 +54,7 @@ class ServingSize(models.Model):
 
 class Nutrient(models.Model):
     # Represents a nutrient, such as a macronutrient or a vitamin or mineral.
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=200, unique=True)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     isCategory = models.BooleanField(default=False)
     parentNutrient = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
