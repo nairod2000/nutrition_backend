@@ -34,4 +34,6 @@ urlpatterns = [
     path('user-goals/', views.UserGoalsListView.as_view(), name='user-goals'),
     path('active-goal/', views.UserActiveGoalView.as_view(), name='active-goal'),
     path('goal-nutrient-status/', views.GoalNutrientStatusView.as_view(), name='goal-nutrient-status'),
+    path('consumed-create/', views.ConsumedCreateView.as_view(), name='consumed-create'),
+    path('consumed-items/', views.UserConsumedItemsView.as_view(), name='consumed-items'),
 ]

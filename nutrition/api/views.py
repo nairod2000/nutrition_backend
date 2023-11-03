@@ -3,9 +3,10 @@ from datetime import date
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.models import Group
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Sum, F
 from django.shortcuts import get_object_or_404
-
 
 from rest_framework import status, viewsets
 from rest_framework.authentication import TokenAuthentication
@@ -19,7 +20,7 @@ from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedIt
 from nutrition.utils.nutrition_utils import calculate_calories, calculate_macronutrients, serialize_goal_nutrients
 
 from .permissions import IsAdminUserOrReadOnly
-from .serializers import ChangePasswordSerializer, UserRetrieveUpdateSerializer, UserGoalIDSerializer , UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, FavoriteItemSerializer, GoalTemplateSerializer, GoalTemplateNutrientSerializer, UserGoalSerializer, UserGoalNutrientSerializer, NutrientStatusSerializer
+from .serializers import ChangePasswordSerializer, UserRetrieveUpdateSerializer, UserGoalIDSerializer , UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, FavoriteItemSerializer, GoalTemplateSerializer, GoalTemplateNutrientSerializer, UserGoalSerializer, UserGoalNutrientSerializer, NutrientStatusSerializer, ConsumedCreateSerializer
 
 
 #######################
@@ -31,12 +32,26 @@ class UserCreateView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
-    
-    def perform_create(self, serializer):
+
+    def create(self, request, *args, **kwargs):
+        # Use serializer to validate data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Validate and hash password
         password = serializer.validated_data.get('password')
+        try:
+            validate_password(password)
+        except DjangoValidationError as e:
+            return Response({"password": e.messages}, status=status.HTTP_400_BAD_REQUEST)
         hashed_password = make_password(password)
         serializer.validated_data['password'] = hashed_password
+
+        # If the data is valid, create the user
         serializer.save()
+
+        # Return the new user data
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # Retrieve and update the user's own profile information
 class UserRetrieveUpdateView(RetrieveUpdateAPIView):
@@ -45,23 +60,53 @@ class UserRetrieveUpdateView(RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        # Return the currently authenticated user
+        # Return the currently authenticated user data
         return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        # Get currently authenticated user object
+        user = self.get_object()
+
+        # Use serializer to validate data
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Update the user profile
+        serializer.save()
+
+        # Return the updated user data
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 # Change Password
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Use serializer to validate data
         serializer = ChangePasswordSerializer(data=request.data)
         if serializer.is_valid():
+
+            # Get currently authenticated user
             user = self.request.user
+
+            # Check for correct old password
             if user.check_password(serializer.data.get('old_password')):
-                user.set_password(serializer.data.get('new_password'))
+                # Validate and set new password
+                new_password = serializer.data.get('new_password')
+                try:
+                    validate_password(new_password)
+                except DjangoValidationError as e:
+                    return Response({"new_password": e.messages}, status=status.HTTP_400_BAD_REQUEST)
+                user.set_password(new_password)
                 user.save()
-                update_session_auth_hash(request, user)  # To update session after password change
+
+                # Update session after password change
+                update_session_auth_hash(request, user)
+
                 return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+            
             return Response({'error': 'Incorrect old password.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -278,6 +323,9 @@ class UserActiveGoalView(RetrieveAPIView):
 #############################
 
 class GoalNutrientStatusView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         user = request.user
         user_active_goal = UserGoal.objects.filter(user=user, isActive=True).first()
@@ -299,7 +347,7 @@ class GoalNutrientStatusView(APIView):
             # Create a list of nutrient status objects and add the calories
             nutrient_status = [
                 {
-                    "nutrient_id": 999,  # Arbitrary ID for calories
+                    "nutrient_id": -1,  # Arbitrary ID for calories
                     "nutrient_name": "Calories",
                     "nutrient_unit": "kcal",
                     "target_value": user_active_goal.calories,
@@ -329,9 +377,65 @@ class GoalNutrientStatusView(APIView):
 
             # Serialize the nutrient status
             serializer = NutrientStatusSerializer(nutrient_status, many=True)
+
             return Response(serializer.data)
         else:
             return Response({'message': 'No active goal found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+##########################
+### Record Consumption ###
+##########################
+
+class ConsumedCreateView(CreateAPIView):
+    serializer_class = ConsumedCreateSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        # Validate the data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # If data is valid, create consumed item for currently authenticated user
+        serializer.save(user=self.request.user)
+
+        return Response({'message': 'Consumption recorded successfully.'}, status=status.HTTP_201_CREATED)
+
+
+########################################
+### List User's Items Consumed Today ###
+########################################
+
+class UserConsumedItemsView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Get all items consumed on current date by authenticated user
+        consumed_items = Consumed.objects.filter(user=self.request.user, consumedAt__date=date.today())
+
+        # Create a list to store serialized consumed items
+        consumed_items_data = []
+
+        # Serialize the consumed items
+        for consumed_item in consumed_items:
+            if consumed_item.item:
+                consumed_items_data.append({
+                    "id": consumed_item.id,
+                    "type": "Item",
+                    "name": consumed_item.item.name,
+                    "portion": consumed_item.portion,
+                })
+            elif consumed_item.combinedItem:
+                consumed_items_data.append({
+                    "id": consumed_item.id,
+                    "type": "CombinedItem",
+                    "name": consumed_item.combinedItem.name,
+                    "portion": consumed_item.portion,
+                })
+
+        return Response(consumed_items_data, status=status.HTTP_200_OK)
 
 
 #######################
