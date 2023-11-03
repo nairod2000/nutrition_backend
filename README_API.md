@@ -28,6 +28,7 @@ Include the obtained token in the `Authorization` header of subsequent requests:
 ## User Management
 
 ### Create a User (Sign Up)
+
 - **Endpoint:** `/api/user-create/`
 - **Method:** POST
 
@@ -333,6 +334,7 @@ Authorization: Token user_token
 }
 ```
 
+
 ## Summary Statistics
 
 ### User's Goal Nutrient Status
@@ -353,7 +355,7 @@ Authorization: Token user_token
 ```
 [
     {
-        "nutrient_id": 999,
+        "nutrient_id": -1,
         "nutrient_name": "Calories",
         "nutrient_unit": "kcal",
         "target_value": 2000.0,
@@ -381,6 +383,72 @@ Authorization: Token user_token
         "total_consumed": 120.0
     },
     // ... (more nutrients)
+]
+```
+
+
+## Consumed Items
+
+### Record Item Consumption
+
+- **Endpoint:** `/api/consumed-create/`
+- **Method:** POST
+
+**Request:**
+```
+POST /api/consumed-create/
+Content-Type: application/json
+{
+    "item": 3, // Alternatively: "combinedItem": 3
+    "portion": 1.75
+}
+```
+Notes for request:
+ - Request must include either `item` or `combinedItem` and must not include both.
+
+**Response:**
+```
+{
+    "message": "Consumption recorded successfully."
+}
+```
+
+
+### List User's Items Consumed Today
+
+This endpoint provides a list of all items and combined items consumed by the authenticated user on the current date.
+
+- **Endpoint:** `/api/consumed-items/`
+- **Method:** GET
+
+**Request:**
+```
+GET /api/consumed-items/
+Content-Type: application/json
+Authorization: Token user_token
+```
+
+**Response:**
+```
+[
+    {
+        "id": 50,
+        "type": "Item",
+        "name": "Banana",
+        "portion": 2.0
+    },
+    {
+        "id": 200,
+        "type": "CombinedItem",
+        "name": "Egg and Toast Breakfast",
+        "portion": 1.2
+    },
+    {
+        "id": 123,
+        "type": "Item",
+        "name": "Frozen Pizza",
+        "portion": 0.5
+    }
 ]
 ```
 
