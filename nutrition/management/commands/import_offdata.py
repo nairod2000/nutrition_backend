@@ -54,24 +54,12 @@ class Command(BaseCommand):
             with transaction.atomic():
                 print('Writing serving sizes to database...')
                 # Bulk create all the serving sizes
-                ServingSize.objects.bulk_create(serving_sizes)
+                ServingSize.objects.bulk_create(serving_sizes, batch_size=1000)
                 print('Done.')
                 print('Writing items to database...')
-                # Bulk create all the items
-                # Item.objects.bulk_create(items)
-                # print('Done.')
-                # print('Writing item nutrients to database...')
-                # # Bulk create all the item nutrients
-                # ItemNutrient.objects.bulk_create(item_nutrients)
-                # print('Done.')
-                # print('Updating item nutrient foreign keys...')
-                # # Update item nutrient foreign keys
-                # for item_nutrient in item_nutrients:
-                #     item_nutrient.item = item_nutrient.item
-                # ItemNutrient.objects.bulk_update(item_nutrients, ['item'])
                 # Bulk create all the items and save the returned objects
                 print('Creating items...')
-                created_items = Item.objects.bulk_create(items)
+                created_items = Item.objects.bulk_create(items, batch_size=1000)
                 print('Done.')
                 # Create a mapping from the old items to the new items
                 print('Creating item mapping...')
@@ -84,7 +72,7 @@ class Command(BaseCommand):
                 print('Done.')
                 # Bulk create all the item nutrients
                 print('Creating item nutrients...')
-                ItemNutrient.objects.bulk_create(item_nutrients)
+                ItemNutrient.objects.bulk_create(item_nutrients, batch_size=1000)
                 print('Done.')
 
             self.stdout.write(self.style.SUCCESS('Successfully imported data.'))
