@@ -77,6 +77,7 @@ class ConsumedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consumed
         fields = '__all__'
+        extra_kwargs = {'user': {'required': False}}
 
 class CombinedItemElementSerializer(serializers.ModelSerializer):
     class Meta:

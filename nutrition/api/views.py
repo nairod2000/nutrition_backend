@@ -368,6 +368,14 @@ class ItemViewSet(viewsets.ModelViewSet):
     serializer_class = ItemSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        name = self.request.query_params.get('name', None)
+        if name is not None:
+            queryset = Item.objects.filter(name__icontains=name).order_by('name')[:10]
+        else:
+            queryset = Item.objects.all()
+        return queryset
+
 class CombinedItemViewSet(viewsets.ModelViewSet):
     queryset = CombinedItem.objects.all()
     serializer_class = CombinedItemSerializer
@@ -377,6 +385,16 @@ class ConsumedViewSet(viewsets.ModelViewSet):
     queryset = Consumed.objects.all()
     serializer_class = ConsumedSerializer
     permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(user=user)
+
+    def get_queryset(self):
+        user = self.request.user
+        # order this by consumedAt
+        queryset = Consumed.objects.filter(user=user, consumedAt__date=date.today())
+        return queryset
 
 class CombinedItemElementViewSet(viewsets.ModelViewSet):
     queryset = CombinedItemElement.objects.all()
