@@ -1,5 +1,6 @@
 import os
 import json
+import csv
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from nutrition.models import Item, ServingSize, Nutrient, Unit, ItemNutrient
@@ -9,6 +10,29 @@ from langdetect import detect
 
 
 
+def getNutrientsAndUnits():
+    nutriunits = {}
+    nutrientCSV = os.path.normpath(os.path.join("data", "nutrients.csv"))
+    with open(nutrientCSV, mode='r',encoding='utf-8-sig') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            name = row['name'].lower()
+            unit_abbreviation = row['unit_abbreviation']
+            nutriunits[name] = unit_abbreviation
+    return nutriunits
+
+def parseServingSize(servingSize):
+    numPart = ''
+    unitPart = ''
+    for i in range (len(servingSize)):
+        if servingSize[i].isalpha():
+            unitPart += servingSize[i]
+        else:
+            numPart += servingSize[i]
+
+def parseNutrientsDict(nutrientsDict):
+    for key,value in nutrientsDict.items():
+        
 
 class Command(BaseCommand):
     help = 'Import item data from a JSONL file'
@@ -21,6 +45,7 @@ class Command(BaseCommand):
         items = []
         item_nutrients = []
         unit_gram, created = Unit.objects.get_or_create(name='gram', abbreviation='g')
+        nutriunits = getNutrientsAndUnits()
         try:
             # Open the CSV file and read its contents
             with open(jsonl_file,'r',encoding='utf-8') as file:

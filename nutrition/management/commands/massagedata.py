@@ -47,22 +47,18 @@ class Command(BaseCommand):
                         if language != 'en':
                             continue
                     # Skip items with missing data
-                    if isAllZero(data.get('code')) or data.get('product_name') is None or data.get('product_name') == '' or data.get('nutriments') is None or data.get('serving_size') is None or data.get('nutriments').get('energy-kcal_100g') is None or data.get('serving_size').isalpha():
+                    if isAllZero(data.get('code')) or data.get('product_name') is None or data.get('product_name') == '' or data.get('nutriments') is None or data.get('serving_size') is None or data.get('nutriments').get('energy-kcal_100g') is None:
                         continue
-                    try:
-                        serving_size_amount = parse_float_from_string(data.get('serving_size'))
-                    except ValueError:
-                        continue
+                    serving_size_amount = data.get('serving_size')
                     massaged_data = {}
                     massaged_data['code'] = data.get('code')
                     massaged_data['product_name'] = data.get('product_name')
                     nutrients = data.get('nutriments')
                     nutrientsDict = {}
                     for key,value in nutrients.items():
-                        if key.endswith("_serving"):
-                            nutrient_name = key.replace("_serving", "")  # e.g., 'sugar'
-                            amount_per_100g = value
-                            nutrientsDict[nutrient_name] = amount_per_100g
+                        nutrient_name = key  # e.g., 'sugar'
+                        v = value
+                        nutrientsDict[nutrient_name] = v
                     massaged_data['nutrients'] = nutrientsDict
                     massaged_data['calories'] = data.get('nutriments').get('energy-kcal_100g')
                     massaged_data['serving_size'] = serving_size_amount
