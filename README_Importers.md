@@ -30,7 +30,7 @@ python manage.py import_nutrients
 python manage.py import_goal_template
 ```
 ```bash
-python manage.py import_offdata.py
+python manage.py import_offdata
 ```
 
 on a side note if you wish to clean the db (wipe out all the existing data) you can run
