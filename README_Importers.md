@@ -14,6 +14,11 @@ that conatins only data in english and that also has the data we care about (nam
 algorithm) anyway the massaged data can be downloaded from https://gofile.io/d/zXEVLX if you want to go through the process of massaging the data yourself do be warned it takes
 about 6 hours. the new importer takes about 30 minutes
 
+## Update
+
+new massaged data set link: https://drive.google.com/file/d/1HdkEhu2dKkXmBqnZLxg1z0wjZwSDDBYq/view?usp=drive_link
+still working on updating the importer to account for the problems we discovered on monday
+
 
 ```bash
 python manage.py import_units
