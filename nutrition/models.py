@@ -58,8 +58,8 @@ class Nutrient(models.Model):
         return self.name
 
 class Item(models.Model):
-    name = models.TextField()
-    barcode = models.CharField(max_length=50, null=True, blank=True)
+    name = models.TextField(db_index=True)
+    barcode = models.CharField(max_length=50, null=True, blank=True, db_index=True)
     calories = models.PositiveIntegerField(validators=[validators.MaxValueValidator(100000)])
     servingSize = models.ForeignKey(ServingSize, on_delete=models.CASCADE)
     nutrients = models.ManyToManyField(Nutrient, through='ItemNutrient', related_name='items')
@@ -77,7 +77,7 @@ class Item(models.Model):
 
 class CombinedItem(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50,db_index=True)
 
     def __str__(self):
         return self.name
