@@ -31,9 +31,11 @@ urlpatterns = [
     path('change-password/', views.ChangePasswordView.as_view(), name='change_password'),
     path('goal-generate/', views.UserGoalGenerateView.as_view(), name='goal-generate'),
     path('goal/<int:pk>/', views.UserGoalRetrieveUpdateView.as_view(), name='goal-update'),
-    path('user-goals/', views.UserGoalsListView.as_view(), name='user-goals'),
-    path('active-goal/', views.UserActiveGoalView.as_view(), name='active-goal'),
+    path('user-goals/', views.UserGoalIDListView.as_view(), name='user-goals'),
+    path('active-goal/', views.UserActiveGoalIDView.as_view(), name='active-goal'),
     path('goal-nutrient-status/', views.GoalNutrientStatusView.as_view(), name='goal-nutrient-status'),
     path('consumed-create/', views.ConsumedCreateView.as_view(), name='consumed-create'),
     path('consumed-items/', views.UserConsumedItemsView.as_view(), name='consumed-items'),
+    path('toggle-favorite/<int:item_id>/', views.ToggleFavoriteView.as_view(), name='toggle-favorite'),
+    path('favorites/', views.FavoriteItemIDListView.as_view(), name='favorites')
 ]

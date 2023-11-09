@@ -1,11 +1,5 @@
 from nutrition.models import UserGoalNutrient
 
-WEIGHT_CONSTANT = 4.536
-HEIGHT_CONSTANT = 15.88
-AGE_CONSTANT = 5
-MALE_BMR_CONSTANT = 5
-FEMALE_BMR_CONSTANT = -161
-
 ACTIVITY_MULTIPLIERS = {
     'Sedentary': 1.2,
     'Lightly Active': 1.375,
@@ -15,81 +9,72 @@ ACTIVITY_MULTIPLIERS = {
 }
 
 # Calculate BMR using Mifflin-St Jeor Equation
-def calculate_bmr(user):
-    bmr = (WEIGHT_CONSTANT * user.weight) + (HEIGHT_CONSTANT * user.height) - (AGE_CONSTANT * user.age)
+def calculateBMR(user):
+    bmr = (4.536 * user.weight) + (15.88 * user.height) - (5 * user.age)
     if user.sex == 'Male':
-        bmr += MALE_BMR_CONSTANT
+        bmr += 5
     else:
-        bmr += FEMALE_BMR_CONSTANT
+        bmr += -161
     return bmr
 
-# Calculate TDEE and adjust for goals, pregnancy, and lactation
-def calculate_calories(user):
-    bmr = calculate_bmr(user)
-    activity_level_multiplier = ACTIVITY_MULTIPLIERS.get(user.activity_level, 1.2)
-    tdee = bmr * activity_level_multiplier
+# Calculate calories; this is based on total daily enerty expenditure adjusted for doet goals, pregnancy, and lactation
+def calculateCalories(user):
+    bmr = calculateBMR(user)
+    tdee = bmr * ACTIVITY_MULTIPLIERS.get(user.activity_level, 1.2)
 
     if user.is_pregnant:
-        # Add an extra 300-500 calories per day during pregnancy
-        tdee += 300  # We could adjust this value based on specific recommendations
+        # Add extra calories during pregnancy
+        tdee += 300  # This is just an estimate, it should be based on more research
 
     if user.is_lactating:
-        # Add an extra 500 calories per day during lactation
-        tdee += 500  # We could adjust this value based on specific recommendations
+        # Add extra calories if breastfeeding
+        tdee += 500  # This is just an estimate, it should be based on more research
 
     if user.diet_goal == 'Lose Weight':
-        calculated_calories = tdee - 500  # Create a caloric deficit of 500 calories/day
+        calories = tdee - 500
     elif user.diet_goal == 'Gain Weight':
-        calculated_calories = tdee + 500  # Create a caloric surplus of 500 calories/day
+        calories = tdee + 500
     else:
-        calculated_calories = tdee  # Maintain current weight
+        calories = tdee
 
-    return calculated_calories
+    return calories
 
-# Calculate the amounts of macronutrients (Carbohydrate, Fat, Protein) a user should consume per day
-def calculate_macronutrients(calories, age):
-    # FDA recommended percentages for different age groups
-    fda_percentages = {
-        'Age_1-3': {'Fat': 0.35, 'Carbohydrate': 0.525, 'Protein': 0.125},
-        'Age_4-18': {'Fat': 0.275, 'Carbohydrate': 0.525, 'Protein': 0.2},
-        'Adults': {'Fat': 0.225, 'Carbohydrate': 0.525, 'Protein': 0.25},
-    }
-
+# Calculate macronutrent targets based on a calorie target
+def calculateMacronutrients(calories, age):
     # Calorie values per gram for each macronutrient based on approximate Atwater factors
-    calorie_per_gram = {'Fat': 9, 'Carbohydrate': 4, 'Protein': 4}
+    caloriesPerGram = {'Fat': 9, 'Carbohydrate': 4, 'Protein': 4}
 
-    # Determine the age group based on the provided 'age' parameter
-    age_group = ''
+    # FDA macronutrent calorie distribution percentages based on age
     if 1 <= age <= 3:
-        age_group = 'Age_1-3'
+        percents = {'Fat': 0.35, 'Carbohydrate': 0.525, 'Protein': 0.125}
     elif 4 <= age <= 18:
-        age_group = 'Age_4-18'
+        percents = {'Fat': 0.275, 'Carbohydrate': 0.525, 'Protein': 0.2}
     else:
-        age_group = 'Adults'
+        percents = {'Fat': 0.225, 'Carbohydrate': 0.525, 'Protein': 0.25}
 
     # Calculate nutrient distribution based on FDA percentages and calorie values
-    nutrient_distribution = {}
-    for nutrient, percentage in fda_percentages[age_group].items():
-        calorie_value = (percentage * calories) / calorie_per_gram[nutrient]
-        nutrient_distribution[nutrient] = calorie_value
+    calorieDistribution = {}
+    for nutrient, percent in percents.items():
+        calorieValue = (percent * calories) / caloriesPerGram[nutrient]
+        calorieDistribution[nutrient] = calorieValue
 
-    return nutrient_distribution
+    return calorieDistribution
 
 # Format nutrient data for use in the frontend
-def serialize_goal_nutrients(goal):
-    goal_nutrients = UserGoalNutrient.objects.filter(goal=goal)
-    goal_nutrients_data = []
+def serializeNutrients(goal):
+    goalNutrients = UserGoalNutrient.objects.filter(goal=goal)
+    goalNutrientsList = []
 
-    for goal_nutrient in goal_nutrients:
-        nutrient_data = {
-            "id": goal_nutrient.id,
+    for goalNutrient in goalNutrients:
+        nutrientData = {
+            "id": goalNutrient.id,
             "nutrient": {
-                "id": goal_nutrient.nutrient.id,
-                "name": goal_nutrient.nutrient.name,
-                "unit": goal_nutrient.nutrient.unit.abbreviation,
+                "id": goalNutrient.nutrient.id,
+                "name": goalNutrient.nutrient.name,
+                "unit": goalNutrient.nutrient.unit.abbreviation,
             },
-            "targetValue": goal_nutrient.targetValue,
+            "targetValue": goalNutrient.targetValue,
         }
-        goal_nutrients_data.append(nutrient_data)
+        goalNutrientsList.append(nutrientData)
 
-    return goal_nutrients_data
+    return goalNutrientsList

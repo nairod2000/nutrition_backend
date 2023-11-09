@@ -1,10 +1,3 @@
-#####################################################
-# This script imports units from a CSV file and creates Unit instances in the database.
-# The CSV file must be located in the data folder.
-# The CSV file must have the following columns:
-# name, abbreviation
-#####################################################
-
 import os
 import csv
 from django.core.management.base import BaseCommand
@@ -14,12 +7,12 @@ class Command(BaseCommand):
     help = 'Import units from a CSV file'
 
     def handle(self, *args, **options):
-        # Define the relative path to CSV file with double backslashes
-        csv_file = os.path.normpath(os.path.join("data", "units.csv"))
+        # Define the relative path to CSV file (this formats it correctly with double backslashes)
+        csvFile = os.path.join("data", "units.csv")
 
         try:
-            # Open the CSV file and read its contents
-            with open(csv_file, mode='r', encoding='utf-8-sig') as file:
+            # Open file
+            with open(csvFile, mode='r', encoding='utf-8-sig') as file:
                 reader = csv.DictReader(file)
 
                 # Iterate through each row in the CSV
@@ -27,7 +20,7 @@ class Command(BaseCommand):
                     name = row['name']
                     abbreviation = row['abbreviation']
 
-                    # Create or update the Unit object
+                    # Get or create the Unit
                     unit, created = Unit.objects.get_or_create(name=name, abbreviation=abbreviation)
                     unit.save()
 

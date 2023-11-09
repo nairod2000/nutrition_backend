@@ -1,18 +1,24 @@
 # Nutrition API Documentation
 
-## Authentication
+## Request Headers
 
-Authentication is required for most endpoints. The API uses token-based authentication. To obtain an authentication token, send a POST request to the following endpoint:
+Headers required for all requests (unless noted differently):
+`Content-Type: application/json`
+`Authorization: Token user_token`
+
+## Token Authentication
+
+This endpoint generates a user authentication token that can be used in other request headers.
 
 - **Endpoint:** `/api/api-token-auth/`
 
 **Request:**
 ```
-POST /api/api-token-auth/
-Content-Type: application/json
+POST
+(No Authorization header needed)
 {
-    "username": "user_username",
-    "password": "user_password"
+    "username": "Username",
+    "password": "Password"
 }
 ```
 
@@ -23,41 +29,38 @@ Content-Type: application/json
 }
 ```
 
-Include the obtained token in the `Authorization` header of subsequent requests: `Authorization: Token your_token_here`
 
 ## User Management
 
 ### Create a User (Sign Up)
 
 - **Endpoint:** `/api/user-create/`
-- **Method:** POST
 
 **Request:**
 ```
-POST /api/user-create/
-Content-Type: application/json
+POST
+(No Authorization header needed)
 {
     "is_superuser": false,
-    "username": "new_user",
-    "password": "new_password",
-    "first_name": "John",
-    "last_name": "Doe",
+    "username": "Username",
+    "password": "Password",
+    "first_name": "FirstName",
+    "last_name": "LastName",
     "email": "user@example.com",
     "is_staff": false,
     "age": 30, // in years
     "weight": 180, // in pounds
     "height": 64, // in inches
-    "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
+    "sex": "Male", // Valid choices: "Male", "Female"
     "is_pregnant": false,
     "is_lactating": false,
-    "activity_level": "Lightly Active",
-    "diet_goal": "Lose Weight"  
+    "activity_level": "Lightly Active", // Valid choices: "Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extremely Active"
+    "diet_goal": "Lose Weight" // Valid choices: "Lose Weight", "Maintain Weight", and "Gain Weight"
 }
 ```
 Notes for request:
- - Only the `username` and `password` fields are required in the request. All other fields are optional.
- - Valid values for activity_level: "Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extremely Active"
- - Valid values for diet_goal: "Lose Weight", "Maintain Weight", "Gain Weight"
+ - You must include `username` and `password`, but everything else is optional.
+ - Valid choices noted in comments are case sensitive
 
 **Response:**
 ```
@@ -65,9 +68,9 @@ Notes for request:
     "id": 3,
     "last_login": null,
     "is_superuser": false,
-    "username": "new_user",
-    "first_name": "John",
-    "last_name": "Doe",
+    "username": "Username",
+    "first_name": "FirstName",
+    "last_name": "LastName",
     "email": "user@example.com",
     "is_staff": false,
     "is_active": true,
@@ -86,87 +89,89 @@ Notes for request:
 ### Retrieve and Update User Profile
 
 - **Endpoint:** `/api/user/`
-- **Method:** GET (retrieve), PUT or PATCH (update)
+- **Methods:** GET (retrieve), PUT or PATCH (update)
 
 **Request (Retrieve):**
 ```
-GET /api/user-update/
-Content-Type: application/json
-Authorization: Token user_token
+GET
+(Leave request body blank)
 ```
 
 **Response (Retrieve):**
 ```
 {
-    "username": "new_user",
+    "username": "Username",
     "email": "user@example.com",
-    "first_name": "John",
-    "last_name": "Doe",
+    "first_name": "FirstName",
+    "last_name": "LastName",
     "age": 30, // in years
     "weight": 180, // in pounds
     "height": 64, // in inches
     "sex": Male,
     "is_pregnant": false,
-    "is_lactating": false
+    "is_lactating": false,
+    "activity_level": "Lightly Active",
+    "diet_goal": "Lose Weight"
 }
 ```
 
 **Request (Full or Partial Update):**
 ```
-PUT /api/user-update/
-Content-Type: application/json
-Authorization: Token user_token
+PUT or PATCH
 {
-    "username": "new_username",
-    "email": "new_email@example.com",
-    "first_name": "NewFirstName",
-    "last_name": "NewLastName"
+    "username": "Username",
+    "email": "user@example.com",
+    "first_name": "FirstName",
+    "last_name": "LastName"
     "age": 30, // in years
     "weight": 180, // in pounds
     "height": 64, // in inches
-    "sex": "Male", // "Male" and "Female" (case sensitive) are the only valid values
+    "sex": "Male", // Valid choices: "Male", "Female"
     "is_pregnant": false,
-    "is_lactating": false
+    "is_lactating": false,
+    "activity_level": "Lightly Active", // Valid choices: "Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extremely Active"
+    "diet_goal": "Lose Weight" // Valid choices: "Lose Weight", "Maintain Weight", and "Gain Weight"
 }
 ```
-All fields are optional in a PUT or PATCH request. If all are omitted, the request will behave similarly to a GET request.
+Notes for request:
+ - All fields are optional in PUT and PATCH requests. The request will work like a GET request if all fields are left out.
+ - Valid choices noted in comments are case sensitive
 
 **Response (Full or Partial Update):**
 ```
 {
-    "username": "new_username",
-    "email": "new_email@example.com",
-    "first_name": "NewFirstName",
-    "last_name": "NewLastName"
+    "username": "Username",
+    "email": "user@example.com",
+    "first_name": "FirstName",
+    "last_name": "LastName"
     "age": 30, // in years
     "weight": 180, // in pounds
     "height": 64, // in inches
     "sex": "Male",
-    "is_pregnant": false
+    "is_pregnant": false,
     "is_lactating": false,
+    "activity_level": "Lightly Active",
+    "diet_goal": "Lose Weight"
 }
 ```
 
 ### Change Password
 
 - **Endpoint:** `/api/change-password/`
-- **Method:** POST
 
 **Request:**
 ```
-POST /api/change-password/
-Content-Type: application/json
-Authorization: Token user_token
+POST
 {
-    "old_password": "old_password",
-    "new_password": "new_password"
+    "old_password": "OldPassword",
+    "new_password": "NewPassword"
 }
 ```
 
 **Response:**
 ```
 {
-    "message": "Password changed successfully."
+    "message": "Password changed successfully"
 }
 ```
 
@@ -175,23 +180,21 @@ Authorization: Token user_token
 ### Generate User Goal
 
 - **Endpoint:** `/api/goal-generate/`
-- **Method:** POST
 
-This endpoint generates a user-specific nutrition goal based on user attributes and returns the goal's details, including calorie and nutrient targets.
+This endpoint uses the attributes of a user to generate and return the details of a nutrition goal, specifically calorie and nutrient tartets.
 
-Calorie target is calculated using a method based on the Mifflin-St Jeor Equation and relies on user age, weight, height, sex, whether pregnant or lactating, activity level, and diet goal. If any of the user attributes `sex`, `age`, `is_pregnant`, or `is_lactating` are undefined, the endpoint will use the following defaults: `is_pregnant` and `is_lactating` default to `false` and `diet_goal` defaults to 'Maintain Weight'. (This does not modify the actual user attributes.) If any of the user attributes `age`, `weight`, `height`, `sex`, or `activity_level` are undefined, the calorie target will be set to a default value of 2000.
+The calorie target is computed using a process built on the Mifflin-St Jeor Equation. The calculation depends on the user’s age, weight, height, sex, activity level, diet goal, and whether the user is pregnant or lactating. `is_pregnant` and `is_lactating` will default to `false` and `diet_goal` will default to 'Maintain Weight' if they aren't defined. (This won't modify the actual user attributes.) If `age`, `weight`, `height`, `sex`, or `activity_level` aren’t defined, the calorie target will default to 2000 calories.
 
-The targets for the macronutrients Carbohydrate, Fat, and Protein are calculated by dividing the calculated calorie target among them based the user age and FDA recommendations based on age. For the purpose of determining macronutrients, if the user attribute `age` is undefined, the endpoint will use the default age of 30. (This does not modify the actual user attribute.)
+The targets for the macronutrients Carbohydrate, Fat, and Protein are calculated by dividing the calculated calorie target among them based the user age and FDA recommendations based on age. `age` will default 30 if it isn't defined. (This doesn't modify the actual user age.)
  
-Micronutrient targets are determined based on FDA recommendations given user sex, age, and whether pregnant or lactating. For the purpose of determining micronutrient targets, if any of the user attributes `sex`, `age`, `is_pregnant`, or `is_lactating` are undefined, the endpoint will use the following defaults: `sex` defaults to 'Male', `age` defaults to 30, and `is_pregnant` and `is_lactating` default to `false`. (This does not modify the actual user attributes.)
+Micronutrient targets are determined using FDA recommendations which are based on sex, age, and whether pregnant or lactating. `sex` defaults to 'Male', `age` defaults to 30, and `is_pregnant` and `is_lactating` default to `false` if they aren't defined. (This doesn't modify the actual user attributes.)
 
-If the user attribute `sex` is undefined, the `name` attribute of the new goal will default to 'Nutritional Goal'. Otherwise, it will be based on the GoalTemplate used to set the micronutrient targets and will be based on those same user attributes. If a goal with the same name already exists, a request will update the attributes of the existing goal instead of generating a new one.
+If the user attribute `sex` isn’t defined, the `name` attribute of the new goal will default to 'Nutritional Goal'. Otherwise, it will be based on the same user attributes that were used to select which GoalTemplate would used to set the micronutrient targets. If there already exists a goal with the same name, a request will update the attributes of the existing goal instead of generating a new one.
 
 **Request:**
 ```
-POST /api/user-goal-generate/
-Content-Type: application/json
-Authorization: Token user_token
+POST
+(Leave request body blank)
 ```
 
 **Response:**
@@ -231,13 +234,11 @@ Authorization: Token user_token
 ### Retrieve or Update User Goal
 
 - **Endpoint:** `/api/goal/{goal_id}/`
-- **Method:** GET (retrieve), PUT or PATCH (update)
+- **Methods:** GET (retrieve), PUT or PATCH (update)
 
 **Request (Update):**
 ```
-PUT /api/goal-update/{goal_id}/
-Content-Type: application/json
-Authorization: Token user_token
+PUT
 {
     "name": "New Goal Name",
     "calories": 2000, // Updating calories will update target values for Carbohydrate, Fat, and Protein
@@ -246,9 +247,9 @@ Authorization: Token user_token
 }
 ```
 Note for request:
- - The `user` and `template` fields cannot be updated.
+ - The `user` and `template` fields cannot be modified.
  - The `nutrients` field is read-only. To update individual goal nutrients, use the endpoint `/api/usergoalnutrients/{id}/`.
- - To ensure one and only one goal is active per user, the `isActive` field can only be set to `true`, and doing so will deactivate all other goals for the currently authenticated user. To deactivate any given goal, set `isActive` to `true` for any other goal for the user.
+ - To ensure one and only one goal is active for each user, the `isActive` field can only be set to `true`, and doing so will deactivate all other goals for that user. To deactivate an active goal, set `isActive` to `true` for one of the user’s other goals.
  
 
 **Response (Retrieve or Update):**
@@ -287,13 +288,11 @@ Note for request:
 ### Retrieve List of User's Goal IDs
 
 - **Endpoint:** `/api/user-goals/`
-- **Method:** GET
 
 **Request:**
 ```
-GET /api/user-goals/
-Content-Type: application/json
-Authorization: Token user_token
+GET
+(Leave request body blank)
 ```
 
 **Response:**
@@ -312,19 +311,17 @@ Authorization: Token user_token
     ]
 }
 ```
-In the response, "next" and "previous" refer to the URL for the next or subsequent page of results, in case the response is paginated and there are more results than can be shown on a single page. If not, they are set to null.
+If the response contains enough items to require pagination, "next" and "previous" in the response indicate the URL for the next or subsequent page of results. Otherwise, they are set to null.
 
 
 ### Retrieve User's Active Goal ID
 
 - **Endpoint:** `/api/active-goal/`
-- **Method:** GET
 
 **Request:**
 ```
-GET /api/active-goal/
-Content-Type: application/json
-Authorization: Token user_token
+GET
+(Leave request body blank)
 ```
 
 **Response:**
@@ -339,16 +336,14 @@ Authorization: Token user_token
 
 ### User's Goal Nutrient Status
 
-This endpoint provides information about the nutrient status based on the user's active goal. It calculates the total consumption for each nutrient in the active goal based on items consumed by the user on the current date.
+This endpoint returns details about the status of the user’s nutrient consumption on the current day compared to the user's active goal. It calculates the total consumption for every nutrient contained in the active goal based on the items and combined items that the user has recorded as consumed on the current date.
 
 - **Endpoint:** `/api/goal-nutrient-status/`
-- **Method:** GET
 
 **Request:**
 ```
-GET /api/goal-nutrient-status/
-Content-Type: application/json
-Authorization: Token user_token
+GET
+(Leave request body blank)
 ```
 
 **Response:**
@@ -392,12 +387,10 @@ Authorization: Token user_token
 ### Record Item Consumption
 
 - **Endpoint:** `/api/consumed-create/`
-- **Method:** POST
 
 **Request:**
 ```
-POST /api/consumed-create/
-Content-Type: application/json
+POST
 {
     "item": 3, // Alternatively: "combinedItem": 3
     "portion": 1.75
@@ -409,23 +402,21 @@ Notes for request:
 **Response:**
 ```
 {
-    "message": "Consumption recorded successfully."
+    "message": "Consumption recorded successfully"
 }
 ```
 
 
 ### List User's Items Consumed Today
 
-This endpoint provides a list of all items and combined items consumed by the authenticated user on the current date.
+This endpoint returns a list of all items and combined items consumed by the authenticated user on the current date.
 
 - **Endpoint:** `/api/consumed-items/`
-- **Method:** GET
 
 **Request:**
 ```
-GET /api/consumed-items/
-Content-Type: application/json
-Authorization: Token user_token
+GET
+(Leave request body blank)
 ```
 
 **Response:**
@@ -453,9 +444,95 @@ Authorization: Token user_token
 ```
 
 
+## Items
+
+### Toggle Item as Favorite or Not for User
+
+This endpoint will set a not-favorite item as a favorite or set a favorite item as not-favorite for the authenticated user
+
+- **Endpoint:** `/api/toggle-favorite/{item_id}/`
+
+**Request:**
+```
+GET
+(Leave request body blank; include item id in URL)
+```
+
+**Responses:**
+```
+{
+    "message": "Item favorited"
+}
+```
+```
+{
+    "message": "Item unfavorited"
+}
+```
+
+
+### Retrieve List of IDs of User's Favorite Items
+
+- **Endpoint:** `/api/favorites/`
+
+**Request:**
+```
+GET
+(Leave request body blank)
+```
+
+**Response:**
+```
+{
+    "count": 2,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "item": 4
+        },
+        {
+            "item": 8
+        }
+    ]
+}
+```
+If the response contains enough items to require pagination, "next" and "previous" in the response indicate the URL for the next or subsequent page of results. Otherwise, they are set to null.
+
+
+### Retrieve Item by Barcode
+
+- **Endpoint:** `/api/items/?barcode={barcode}/`
+
+**Request:**
+```
+GET
+(Leave request body blank; include barcode in URL)
+```
+
+**Responses:**
+```
+{
+    "id": 1,
+    "name": "Banana",
+    "barcode": "123456",
+    "calories": 50,
+    "isCustom": false,
+    "servingSize": 4,
+    "user": null,
+    "nutrients": [
+        2,
+        4,
+        7,
+        8
+    ]
+}
+```
+
+
 ## "Regular" View Set Endpoints
 
-These endpoints based on Django REST Framework's ModelViewSet and provide the basic CRUD functionality for each model. These endpoints provide access to all model fields. Details on available fields can be found on the browsable API. If running a local server using the command `python models.py runserver`, you can access the browsable API at http://localhost:8000/api/. You must be logged in to access the browsable API and must be logged in as a superuser for POST, PUT, PATCH, or DELETE operations on certain endpoints.
+These endpoints are based on the Django REST Framework's ModelViewSet. They offer CRUD operations for each model and access to all model fields. POST, PUT, PATCH, or DELETE requests to some endpoints may be sent only by superusers. The browsable API can be used to find details on available fields. These endpoints can be used via the browsable API at http://localhost:8000/api/ after starting a local server with `python models.py runserver`.
 
 
 ### Users

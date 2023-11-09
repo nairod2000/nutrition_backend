@@ -16,9 +16,7 @@ class UserRetrieveUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email', 'first_name', 'last_name', 'age', 'weight', 'height', 'sex', 'is_pregnant', 'is_lactating', 'activity_level', 'diet_goal']
-        extra_kwargs = {
-            'username': {'required': False},
-        }
+        extra_kwargs = {'username': {'required': False}}
 
     def validate(self, data):
         age = data.get('age')
@@ -27,6 +25,7 @@ class UserRetrieveUpdateSerializer(serializers.ModelSerializer):
         sex = data.get('sex')
         is_pregnant = data.get('is_pregnant')
         is_lactating = data.get('is_lactating')
+        password = data.get('password')
 
         if age is not None and (age < 0 or age > 120):
             raise serializers.ValidationError("Age must be between 0 and 120.")
@@ -45,13 +44,23 @@ class UserRetrieveUpdateSerializer(serializers.ModelSerializer):
 
         return data
 
-# Goal Serializers
+# ID Serializers
+
+class ItemIDSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Item
+        fields = ['id']
+
+class FavoriteItemIDSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FavoriteItem
+        fields = ['item']
 
 class UserGoalIDSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserGoal
         fields = ['id']
-
+        
 # Nutrient Serializers
 
 class NutrientStatusSerializer(serializers.Serializer):
@@ -67,9 +76,6 @@ class ConsumedCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consumed
         fields = ['item', 'combinedItem', 'portion']
-        # extra_kwargs = {
-        #     'portion': {'min_value': 0}
-        # }
 
     def validate(self, data):
         portion = data.get('portion')
@@ -87,7 +93,7 @@ class ConsumedCreateSerializer(serializers.ModelSerializer):
 
         return data
 
-# Model Serializers
+# "Regular" Model Serializers
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -148,9 +154,6 @@ class ServingSizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServingSize
         fields = '__all__'
-        extra_kwargs = {
-            'amount': {'min_value': 0.01}
-        }
 
     def validate(self, data):
         amount = data.get('amount')
@@ -163,7 +166,7 @@ class ServingSizeSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = '__all__'
+        fields = ["id", "name", "barcode", "calories", "servingSize", "isCustom", "user", "nutrients"]
 
     def validate(self, data):
         calories = data.get('calories')
@@ -182,9 +185,6 @@ class ConsumedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consumed
         fields = '__all__'
-        # extra_kwargs = {
-        #     'portion': {'min_value': 0}
-        # }
 
     def validate(self, data):
         portion = data.get('portion')
@@ -206,9 +206,6 @@ class CombinedItemElementSerializer(serializers.ModelSerializer):
     class Meta:
         model = CombinedItemElement
         fields = '__all__'
-        extra_kwargs = {
-            'portion': {'min_value': 0}
-        }
 
     def validate(self, data):
         portion = data.get('portion')
@@ -222,9 +219,6 @@ class ItemNutrientSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemNutrient
         fields = '__all__'
-        extra_kwargs = {
-            'amount': {'min_value': 0}
-        }
 
     def validate(self, data):
         amount = data.get('amount')
@@ -238,9 +232,6 @@ class ItemBioactiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemBioactive
         fields = '__all__'
-        extra_kwargs = {
-            'amount': {'min_value': 0}
-        }
 
     def validate(self, data):
         amount = data.get('amount')
@@ -259,9 +250,6 @@ class GoalTemplateNutrientSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoalTemplateNutrient
         fields = '__all__'
-        extra_kwargs = {
-            'recommendedValue': {'min_value': 0}
-        }
 
     def validate(self, data):
         recommendedValue = data.get('recommendedValue')
@@ -280,9 +268,6 @@ class UserGoalNutrientSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserGoalNutrient
         fields = '__all__'
-        extra_kwargs = {
-            'targetValue': {'min_value': 0}
-        }
 
     def validate(self, data):
         targetValue = data.get('targetValue')
@@ -298,9 +283,7 @@ class UserGoalSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate(self, data):
-        name = data.get('name')
-
         if not data.get('isActive') and not UserGoal.objects.filter(user=data.get('user'), isActive=True).exists():
-            raise serializers.ValidationError("At least one goal must be active.")
+            raise serializers.ValidationError("One goal must be set as active.")
 
         return data

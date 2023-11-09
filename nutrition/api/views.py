@@ -1,523 +1,483 @@
 from datetime import date
 
-from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.models import Group
-from django.contrib.auth.hashers import make_password
-from django.contrib.auth.password_validation import validate_password
+from django.contrib import auth
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Sum, F
-from django.shortcuts import get_object_or_404
 
 from rest_framework import status, viewsets
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, RetrieveUpdateAPIView
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, SAFE_METHODS
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from nutrition.models import User, Unit, Nutrient, ServingSize, Item, CombinedItem, Consumed, CombinedItemElement, ItemNutrient, ItemBioactive, FavoriteItem, GoalTemplate, GoalTemplateNutrient, UserGoal, UserGoalNutrient
-from nutrition.utils.nutrition_utils import calculate_calories, calculate_macronutrients, serialize_goal_nutrients
+from nutrition.utils.nutrition_utils import calculateCalories, calculateMacronutrients, serializeNutrients
 
-from .permissions import IsAdminUserOrReadOnly
-from .serializers import ChangePasswordSerializer, UserRetrieveUpdateSerializer, UserGoalIDSerializer , UserSerializer, GroupSerializer, UnitSerializer, NutrientSerializer, ServingSizeSerializer, ItemSerializer, CombinedItemSerializer, ConsumedSerializer, CombinedItemElementSerializer, ItemNutrientSerializer, ItemBioactiveSerializer, FavoriteItemSerializer, GoalTemplateSerializer, GoalTemplateNutrientSerializer, UserGoalSerializer, UserGoalNutrientSerializer, NutrientStatusSerializer, ConsumedCreateSerializer
+from . import permissions, serializers
 
 
-#######################
-### User Management ###
-#######################
-
-# Create User (sign up)
 class UserCreateView(CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = serializers.UserSerializer
     permission_classes = [AllowAny]
 
-    def create(self, request, *args, **kwargs):
-        # Use serializer to validate data
+    def create(self, request):
+        # Validate data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Validate and hash password
+        # Validate and hash the password
         password = serializer.validated_data.get('password')
         try:
-            validate_password(password)
-        except DjangoValidationError as e:
-            return Response({"password": e.messages}, status=status.HTTP_400_BAD_REQUEST)
-        hashed_password = make_password(password)
-        serializer.validated_data['password'] = hashed_password
+            auth.password_validation.validate_password(password)
+        except DjangoValidationError as error:
+            return Response({"password": error.messages}, status=status.HTTP_400_BAD_REQUEST)
+        hash = auth.hashers.make_password(password)
+        serializer.validated_data['password'] = hash
 
-        # If the data is valid, create the user
+        # If the data and password are valid, create the user
         serializer.save()
 
-        # Return the new user data
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-# Retrieve and update the user's own profile information
+
 class UserRetrieveUpdateView(RetrieveUpdateAPIView):
-    serializer_class = UserRetrieveUpdateSerializer
+    serializer_class = serializers.UserRetrieveUpdateSerializer
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated]
 
-    def get_object(self):
-        # Return the currently authenticated user data
-        return self.request.user
+    def update(self, request):
+        # Get authenticated user
+        user = self.request.user
 
-    def update(self, request, *args, **kwargs):
-        # Get currently authenticated user object
-        user = self.get_object()
-
-        # Use serializer to validate data
+        # # Validate data
         serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        # Update the user profile
+        # Make the update
         serializer.save()
 
-        # Return the updated user data
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-# Change Password
+
 class ChangePasswordView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        # Use serializer to validate data
-        serializer = ChangePasswordSerializer(data=request.data)
-        if serializer.is_valid():
+    def post(self, request):  # Don't remove 'request'
+        # Validate data
+        serializer = serializers.ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-            # Get currently authenticated user
-            user = self.request.user
+        # Get authenticated user
+        user = self.request.user
 
-            # Check for correct old password
-            if user.check_password(serializer.data.get('old_password')):
-                # Validate and set new password
-                new_password = serializer.data.get('new_password')
-                try:
-                    validate_password(new_password)
-                except DjangoValidationError as e:
-                    return Response({"new_password": e.messages}, status=status.HTTP_400_BAD_REQUEST)
-                user.set_password(new_password)
-                user.save()
-
-                # Update session after password change
-                update_session_auth_hash(request, user)
-
-                return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+        # Check if old password is correct
+        if user.check_password(serializer.data.get('old_password')):
+            # Check if new password meets Django password rules
+            password = serializer.data.get('new_password')
+            try:
+                auth.password_validation.validate_password(password)
+            except DjangoValidationError as error:
+                return Response({"new_password": error.messages}, status=status.HTTP_400_BAD_REQUEST)
             
-            return Response({'error': 'Incorrect old password.'}, status=status.HTTP_400_BAD_REQUEST)
+            # Set the new user password
+            user.set_password(password)
+            user.save()
+
+            return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Old password entered incorrectly'}, status=status.HTTP_400_BAD_REQUEST)
 
-
-##########################
-### Generate User Goal ###
-##########################
 
 class UserGoalGenerateView(CreateAPIView):
-    serializer_class = UserGoalSerializer
+    serializer_class = serializers.UserGoalSerializer
     queryset = UserGoal.objects.all()
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
 
-    def create(self, request, *args, **kwargs):
-        # Get the user associated with the token
-        user = request.user
+    def create(self, request):
+        # Get authenticated user
+        user = self.request.user
 
-        # Default values for undefined User attributes
+        # Use the user's info or default values for these attributes
         sex = user.sex or 'Male'
         age = user.age or 30
-        is_pregnant = user.is_pregnant or False
-        is_lactating = user.is_lactating or False
+        isPregnant = user.is_pregnant or False
+        isLactating = user.is_lactating or False
 
-        # Determine the GoalTemplate based on user attributes (sex, is_pregnant, is_lactating, age)
-        goal_template = GoalTemplate.objects.filter(
-            sex=sex,
-            isPregnant=is_pregnant,
-            isLactating=is_lactating,
-            ageMin__lte=age,
-            ageMax__gte=age
-        ).first()
+        # Get the template that matches the user's info
+        template = GoalTemplate.objects.filter(sex=sex, isPregnant=isPregnant, isLactating=isLactating, ageMin__lte=age, ageMax__gte=age).first()
+        if not template:
+            return Response({'detail': 'No goal templates fit this user'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not goal_template:
-            return Response({'detail': 'No suitable GoalTemplate found for the user.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Calculate the calories for the user
-        # Check if any of the required fields required for calorie calculation is None or empty
-        calorie_required_fields = ['age', 'weight', 'height', 'sex', 'activity_level']
-        if any(getattr(user, field, None) is None or getattr(user, field) == '' for field in calorie_required_fields):
-            calories = 2000
+        # Calculate calorie target
+        if user.age and user.weight and user.height and user.sex and user.activity_level:
+            calories = calculateCalories(user)
         else:
-            calories = calculate_calories(user)
+            calories = 2000
         
-        # Calculate the macronutrient distribution for the user
-        nutrient_distribution = calculate_macronutrients(calories, age)
+        # Calculate targets for the macronutrients
+        macronutrients = calculateMacronutrients(calories, age)
 
-        # Try to get an existing UserGoal with the same name
-        user_goal, created = UserGoal.objects.get_or_create(
-            user=user,
-            name=(goal_template.name if user.sex else 'Nutritional Goal'),
-            defaults={
-                'template': goal_template,
-                'calories': calories
-            }
-        )
+        # If the user hasn't given their sex, look for an existing goal with a name that is either the same as the template or "Nutritional Goal"
+        # If no such goal exists, create it
+        goal, created = UserGoal.objects.get_or_create(user=user, name=(template.name if user.sex else 'Nutritional Goal'), defaults={'template': template, 'calories': calories})
 
-        # If the UserGoal was not created (already exists), update its attributes
+        # If the goal was not created because it already exists, update it
         if not created:
-            user_goal.template = goal_template
-            user_goal.calories = calories
-            user_goal.save()
+            goal.template = template
+            goal.calories = calories
+            goal.save()
 
-        # Copy GoalTemplateNutrients to UserGoalNutrients
-        goal_template_nutrients = goal_template.goaltemplatenutrient_set.all()
-        for nutrient in goal_template_nutrients:
-            user_goal_nutrient, created = UserGoalNutrient.objects.get_or_create(
-                goal=user_goal,
-                nutrient=nutrient.nutrient,
-                defaults={'targetValue': nutrient.recommendedValue}
-            )
+        # Add new UserGoalNutrients for each GoalTemplateNutrient from the the GoalTemplate, setting the goal target values equal to the template recommended values
+        templateNutrients = template.goaltemplatenutrient_set.all()
+        for nutrient in templateNutrients:
+            goalNutrient, created = UserGoalNutrient.objects.get_or_create(goal=goal, nutrient=nutrient.nutrient, defaults={'targetValue': nutrient.recommendedValue})
 
-            # If the UserGoalNutrient was not created (already exists), update the targetValue
+            # If the nutrient was not created because it already exists, update its targetValue
             if not created:
-                user_goal_nutrient.targetValue = nutrient.recommendedValue
-                user_goal_nutrient.save()
+                goalNutrient.targetValue = nutrient.recommendedValue
+                goalNutrient.save()
 
+        # Add a new goal nutrient for each of the three macronutrients
+        for nutrientName, targetValue in macronutrients.items():
+            nutrient = Nutrient.objects.get_or_create(name=nutrientName)[0]
+            goalNutrient, created = UserGoalNutrient.objects.get_or_create(goal=goal, nutrient=nutrient, defaults={'targetValue': targetValue})
 
-        # Create or modify UserGoalNutrients for Carbohydrate, Fat, and Protein
-        for nutrient_name, target_value in nutrient_distribution.items():
-            nutrient, _ = Nutrient.objects.get_or_create(name=nutrient_name)
-            user_goal_nutrient, created = UserGoalNutrient.objects.get_or_create(
-                goal=user_goal,
-                nutrient=nutrient,
-                defaults={'targetValue': target_value}
-            )
-            # If the UserGoalNutrient already exists, update the targetValue
+            # If the goal nutrient was not created (that is, it already exists), update the targetValue for that macronutrient
             if not created:
-                user_goal_nutrient.targetValue = target_value
-                user_goal_nutrient.save()
+                goalNutrient.targetValue = targetValue
+                goalNutrient.save()
 
-        # Serialize the UserGoal object
-        serializer = self.get_serializer(user_goal)
-        response_data = serializer.data
+        # Serialize the new goal
+        serializer = self.get_serializer(goal)
+        response = serializer.data
 
-        # Serialize and add goal nutrients to the response
-        response_data["nutrients"] = serialize_goal_nutrients(user_goal)
+        # Format the nutrients and add them to the response
+        response["nutrients"] = serializeNutrients(goal)
 
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        return Response(response, status=status.HTTP_201_CREATED)
 
-
-####################################
-### Retreive or Update User Goal ###
-####################################
 
 class UserGoalRetrieveUpdateView(RetrieveUpdateAPIView):
     queryset = UserGoal.objects.all()
-    serializer_class = UserGoalSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
+    serializer_class = serializers.UserGoalSerializer
 
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        user_goal_serializer = self.get_serializer(instance).data
+    def retrieve(self, request, pk):
+        # Get the goal and serialize the data
+        goal = UserGoal.objects.filter(id=pk).first()
 
-        # Serialize and add goal nutrients to the response
-        user_goal_serializer["nutrients"] = serialize_goal_nutrients(instance)
+        # Verify goal exists
+        if not goal:
+            return Response({'message': 'Requested goal does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response(user_goal_serializer)
+        # Verify authenticated user matches goal user
+        if self.request.user != goal.user:
+            return Response({'message': 'Requested goal does not belong to this user'}, status=status.HTTP_403_FORBIDDEN)
 
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        # Serialize the goal and add nutrients
+        serializer = self.get_serializer(goal).data
+        serializer["nutrients"] = serializeNutrients(goal)
+
+        return Response(serializer, status=status.HTTP_200_OK)
+
+    def update(self, request, pk):
+        # Get the goal and user
+        goal = UserGoal.objects.filter(id=pk).first()
+        user = self.request.user
+
+        # Verify goal exists
+        if not goal:
+            return Response({'message': 'Requested goal does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Verify authenticated user matches goal user
+        if user != goal.user:
+            return Response({'message': 'Requested goal does not belong to this user'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Validate the data using validate function in serializer
+        serializer = self.get_serializer(goal, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
         # Update 'name' field if it's in the request data
         if 'name' in request.data:
-            new_name = request.data['name']
-            instance.name = new_name
+            goal.name = request.data['name']
 
         # Update 'calories'
         if 'calories' in request.data:
-            new_calories = request.data['calories']
-            instance.calories = new_calories
+            calories = request.data['calories']
+            goal.calories = calories
 
             # If user age is defined, update the macronutrient distribution based on the new calories
-            if instance.user.age is not None and instance.user.age != '':
-                nutrient_distribution = calculate_macronutrients(new_calories, instance.user.age)
-                for nutrient_name, target_value in nutrient_distribution.items():
-                    nutrient, _ = Nutrient.objects.get_or_create(name=nutrient_name)
-                    user_goal_nutrient, created = UserGoalNutrient.objects.get_or_create(
-                        goal=instance,
-                        nutrient=nutrient,
-                        defaults={'targetValue': target_value}
-                    )
+            if user.age:
+                macronutrients = calculateMacronutrients(calories, user.age)
+                for nutrientName, targetValue in macronutrients.items():
+                    nutrient = Nutrient.objects.get_or_create(name=nutrientName)[0] # [0] prevents return of boolean
+                    goalNutrient, created = UserGoalNutrient.objects.get_or_create(goal=goal, nutrient=nutrient, defaults={'targetValue': targetValue})
 
-                    # If the UserGoalNutrient was not created (already exists), update the targetValue
+                    # If the UserGoalNutrient was not created (i.e., already exists), update the targetValue
                     if not created:
-                        user_goal_nutrient.targetValue = target_value
-                        user_goal_nutrient.save()
+                        goalNutrient.targetValue = targetValue
+                        goalNutrient.save()
 
-        # Check if 'isActive' field is being updated
         if 'isActive' in request.data:
-            activating = request.data['isActive']
-            if activating:
-                # Activate the goal and deactivate other goals for the same user
-                UserGoal.objects.filter(user=instance.user).exclude(pk=instance.pk).update(isActive=False)
-                instance.isActive = activating
-                instance.save()
-            else: # Attempting to deactivate the goal
-                # Prevent deactivating the goal.
-                raise ValidationError("To deactivate this goal, set another goal as active.")
+            # Check if this goal is being set as the active goal
+            if request.data['isActive']:
+                # Activate this goal and deactivate all other goals
+                user.usergoal_set.exclude(pk=goal.pk).update(isActive=False)
+                goal.isActive = True
+                goal.save()
+            else: # If the goal is being deactivated, do not deactivate
+                raise ValidationError("To deactivate this goal, set another goal as active")
 
-        instance.save()
+        # Save the updated goal
+        goal.save()
 
-        # Serialize and add goal nutrients to the response
-        serialized_data = serializer.data
-        serialized_data["nutrients"] = serialize_goal_nutrients(instance)
+        # Format and add the goal with its nutrients to the response
+        response = serializer.data
+        response["nutrients"] = serializeNutrients(goal)
 
-        return Response(serialized_data)
+        return Response(response, status=status.HTTP_200_OK)
 
 
-############################
-### List User's Goal IDs ###
-############################
-
-class UserGoalsListView(ListAPIView):
-    serializer_class = UserGoalIDSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
+class UserGoalIDListView(ListAPIView):
+    serializer_class = serializers.UserGoalIDSerializer
 
     # Retrieve a list of the user's goals
     def get_queryset(self):
-        user = self.request.user
-        goals = user.usergoal_set.all()
+        goals = self.request.user.usergoal_set.all()
 
         if not goals:
-            return Response({'message': 'No goals found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No goals found')
 
         return goals
 
 
-#################################
-### Get User's Active Goal ID ###
-#################################
-
-class UserActiveGoalView(RetrieveAPIView):
-    serializer_class = UserGoalIDSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
+class UserActiveGoalIDView(RetrieveAPIView):
+    serializer_class = serializers.UserGoalIDSerializer
 
     # Retrieve the user's active goal ID
     def get_object(self):
-        user = self.request.user
-        active_goal = user.usergoal_set.filter(isActive=True).first()
+        activeGoal = self.request.user.usergoal_set.filter(isActive=True).first()
 
-        if not active_goal:
-            return Response({'message': 'No active goal found.'}, status=status.HTTP_404_NOT_FOUND)
+        if not activeGoal:
+            raise NotFound('No active goal found')
 
-        return active_goal
+        return activeGoal
 
-
-#############################
-### Daily Nutrient Totals ###
-#############################
 
 class GoalNutrientStatusView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        user = request.user
-        user_active_goal = UserGoal.objects.filter(user=user, isActive=True).first()
+    def get(self, request):  # Don't remove 'request'
+        # Get authenticated user and their active goal
+        user = self.request.user
+        activeGoal = user.usergoal_set.filter(isActive=True).first()
 
-        if user_active_goal:
-            goal_nutrients = user_active_goal.usergoalnutrient_set.all()
+        if activeGoal:
+            # Make a list of all the nutrients in the active goal
+            goalNutrients = activeGoal.usergoalnutrient_set.all()
             
-            # Get all consumed items for the user for the current date
-            consumed_items = Consumed.objects.filter(
-                user=user,
-                consumedAt__date=date.today()
-            )
+            # Get everything the user ate today
+            consumedItems = user.consumed_set.filter(consumedAt__date=date.today())
             
-            # Calculate total consumed calories
-            total_consumed_calories = consumed_items.aggregate(
-                total_consumed_calories=Sum(F('item__calories') * F('portion'))
-            )['total_consumed_calories'] or 0
+            # Calculate how many calories have been consumed
+            caloriesConsumed = consumedItems.aggregate(totalCalories=Sum(F('item__calories') * F('portion')))['totalCalories'] or 0
 
-            # Create a list of nutrient status objects and add the calories
-            nutrient_status = [
+            # Create a list to hold the status of each nutrient and add calories
+            nutrientStatus = [
                 {
                     "nutrient_id": -1,  # Arbitrary ID for calories
                     "nutrient_name": "Calories",
                     "nutrient_unit": "kcal",
-                    "target_value": user_active_goal.calories,
-                    "total_consumed": total_consumed_calories,
+                    "target_value": activeGoal.calories,
+                    "total_consumed": caloriesConsumed,
                 }
             ]
 
-            for goal_nutrient in goal_nutrients:
-                # Filter consumed items containing the goal nutrient
-                consumed_items_with_nutrient = consumed_items.filter(
-                    item__itemnutrient__nutrient=goal_nutrient.nutrient
-                )
+            for goalNutrient in goalNutrients:
+                # Make a list of of consumed items that contain the current goal nutrient
+                itemsWithNutrient = consumedItems.filter(item__itemnutrient__nutrient=goalNutrient.nutrient)
 
-                # Calculate total consumed nutrient
-                total_consumed_nutrient = consumed_items_with_nutrient.aggregate(
-                    total_consumed=Sum(F('portion') * F('item__itemnutrient__amount'))
-                )['total_consumed'] or 0
+                # Calculate how much of the current nutrient has been consumed
+                nutrientConsumed = itemsWithNutrient.aggregate(totalNutrient=Sum(F('portion') * F('item__itemnutrient__amount')))['totalNutrient'] or 0
 
-                # Append the nutrient status to the list
-                nutrient_status.append({
-                    "nutrient_id": goal_nutrient.nutrient.id,
-                    "nutrient_name": goal_nutrient.nutrient.name,
-                    "nutrient_unit": goal_nutrient.nutrient.unit.abbreviation,
-                    "target_value": goal_nutrient.targetValue,
-                    "total_consumed": total_consumed_nutrient,
+                # Add the status of the current nutrient to the status list
+                nutrientStatus.append({
+                    "nutrient_id": goalNutrient.nutrient.id,
+                    "nutrient_name": goalNutrient.nutrient.name,
+                    "nutrient_unit": goalNutrient.nutrient.unit.abbreviation,
+                    "target_value": goalNutrient.targetValue,
+                    "total_consumed": nutrientConsumed,
                 })
 
-            # Serialize the nutrient status
-            serializer = NutrientStatusSerializer(nutrient_status, many=True)
+            # Serialize the list of nutrient statuses
+            serializer = serializers.NutrientStatusSerializer(nutrientStatus, many=True)
 
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            return Response({'message': 'No active goal found.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': 'No active goal found'}, status=status.HTTP_404_NOT_FOUND)
 
-
-##########################
-### Record Consumption ###
-##########################
 
 class ConsumedCreateView(CreateAPIView):
-    serializer_class = ConsumedCreateSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.ConsumedCreateSerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
         # Validate the data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # If data is valid, create consumed item for currently authenticated user
+        # If data is valid, create consumed item for authenticated user
         serializer.save(user=self.request.user)
 
-        return Response({'message': 'Consumption recorded successfully.'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Consumption recorded successfully'}, status=status.HTTP_201_CREATED)
 
-
-########################################
-### List User's Items Consumed Today ###
-########################################
 
 class UserConsumedItemsView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request): # Don't remove 'request'
         # Get all items consumed on current date by authenticated user
-        consumed_items = Consumed.objects.filter(user=self.request.user, consumedAt__date=date.today())
+        consumedItems = self.request.user.consumed_set.filter(consumedAt__date=date.today())
 
         # Create a list to store serialized consumed items
-        consumed_items_data = []
+        consumedItemsList = []
 
         # Serialize the consumed items
-        for consumed_item in consumed_items:
-            if consumed_item.item:
-                consumed_items_data.append({
-                    "id": consumed_item.id,
+        for consumedItem in consumedItems:
+            if consumedItem.item:
+                consumedItemsList.append({
+                    "id": consumedItem.id,
                     "type": "Item",
-                    "name": consumed_item.item.name,
-                    "portion": consumed_item.portion,
+                    "name": consumedItem.item.name,
+                    "portion": consumedItem.portion,
                 })
-            elif consumed_item.combinedItem:
-                consumed_items_data.append({
-                    "id": consumed_item.id,
+            elif consumedItem.combinedItem:
+                consumedItemsList.append({
+                    "id": consumedItem.id,
                     "type": "CombinedItem",
-                    "name": consumed_item.combinedItem.name,
-                    "portion": consumed_item.portion,
+                    "name": consumedItem.combinedItem.name,
+                    "portion": consumedItem.portion,
                 })
 
-        return Response(consumed_items_data, status=status.HTTP_200_OK)
+        return Response(consumedItemsList, status=status.HTTP_200_OK)
 
 
-#######################
-### Model View Sets ###
-#######################
+class ToggleFavoriteView(APIView):
+    queryset = FavoriteItem.objects.all()
+    serializer_class = serializers.FavoriteItemSerializer
 
+    def post(self, request, item_id): # Don't remove 'request'
+        # Verify item exists
+        item = Item.objects.filter(id=item_id).first()
+        if not item:
+            return Response({'message': 'Item does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Try to mark the item as a favorite of the authenticated user by creating a favoriteItem object
+        favoriteItem, created = FavoriteItem.objects.get_or_create(user=self.request.user, item=item)
+
+        # If the favoriteItem was created, the item is now marked as a favorite, otherwise delete the favoriteItem to unfavorite the item
+        if created:
+            return Response({'message': 'Item favorited'}, status=status.HTTP_201_CREATED)
+        else:
+            favoriteItem.delete()
+            return Response({'message': 'Item unfavorited'}, status=status.HTTP_204_NO_CONTENT)
+
+
+class FavoriteItemIDListView(ListAPIView):
+    serializer_class = serializers.FavoriteItemIDSerializer
+
+    # Retrieve a list of the authenticated user's favorites
+    def get_queryset(self):
+        favorites = self.request.user.favoriteitem_set.all()
+
+        if not favorites:
+            raise NotFound('No favorites found')
+
+        return favorites
+
+ 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')
-    serializer_class = UserSerializer
+    serializer_class = serializers.UserSerializer
     permission_classes = [IsAdminUser]
 
 class GroupViewSet(viewsets.ModelViewSet):
-    queryset = Group.objects.all()
-    serializer_class = GroupSerializer
+    queryset = auth.models.Group.objects.all()
+    serializer_class = serializers.GroupSerializer
     permission_classes = [IsAdminUser]
 
 class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all()
-    serializer_class = UnitSerializer
-    permission_classes = [IsAdminUserOrReadOnly]
+    serializer_class = serializers.UnitSerializer
+    permission_classes = [permissions.IsAdminUserOrReadOnly]
 
 class NutrientViewSet(viewsets.ModelViewSet):
     queryset = Nutrient.objects.all()
-    serializer_class = NutrientSerializer
-    permission_classes = [IsAdminUserOrReadOnly]
+    serializer_class = serializers.NutrientSerializer
+    permission_classes = [permissions.IsAdminUserOrReadOnly]
 
 class ServingSizeViewSet(viewsets.ModelViewSet):
     queryset = ServingSize.objects.all()
-    serializer_class = ServingSizeSerializer
+    serializer_class = serializers.ServingSizeSerializer
     permission_classes = [IsAuthenticated]
 
 class ItemViewSet(viewsets.ModelViewSet):
     queryset = Item.objects.all()
-    serializer_class = ItemSerializer
+    serializer_class = serializers.ItemSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Item.objects.all()
+        barcode = self.request.query_params.get('barcode', None)
+        # Check if request contains barcode
+        if barcode:
+            queryset = queryset.filter(barcode=barcode)
+            # Verify an item with the barcode exists
+            if not queryset.exists():
+                raise NotFound('No items match this barcode')
+        return queryset
 
 class CombinedItemViewSet(viewsets.ModelViewSet):
     queryset = CombinedItem.objects.all()
-    serializer_class = CombinedItemSerializer
+    serializer_class = serializers.CombinedItemSerializer
     permission_classes = [IsAuthenticated]
 
 class ConsumedViewSet(viewsets.ModelViewSet):
     queryset = Consumed.objects.all()
-    serializer_class = ConsumedSerializer
+    serializer_class = serializers.ConsumedSerializer
     permission_classes = [IsAuthenticated]
 
 class CombinedItemElementViewSet(viewsets.ModelViewSet):
     queryset = CombinedItemElement.objects.all()
-    serializer_class = CombinedItemElementSerializer
+    serializer_class = serializers.CombinedItemElementSerializer
     permission_classes = [IsAuthenticated]
 
 class ItemNutrientViewSet(viewsets.ModelViewSet):
     queryset = ItemNutrient.objects.all()
-    serializer_class = ItemNutrientSerializer
+    serializer_class = serializers.ItemNutrientSerializer
     permission_classes = [IsAuthenticated]
 
 class ItemBioactiveViewSet(viewsets.ModelViewSet):
     queryset = ItemBioactive.objects.all()
-    serializer_class = ItemBioactiveSerializer
+    serializer_class = serializers.ItemBioactiveSerializer
     permission_classes = [IsAuthenticated]
 
 class FavoriteItemViewSet(viewsets.ModelViewSet):
     queryset = FavoriteItem.objects.all()
-    serializer_class = FavoriteItemSerializer
+    serializer_class = serializers.FavoriteItemSerializer
     permission_classes = [IsAuthenticated]
 
 class GoalTemplateViewSet(viewsets.ModelViewSet):
     queryset = GoalTemplate.objects.all()
-    serializer_class = GoalTemplateSerializer
-    permission_classes = [IsAdminUserOrReadOnly]
+    serializer_class = serializers.GoalTemplateSerializer
+    permission_classes = [permissions.IsAdminUserOrReadOnly]
 
 class GoalTemplateNutrientViewSet(viewsets.ModelViewSet):
     queryset = GoalTemplateNutrient.objects.all()
-    serializer_class = GoalTemplateNutrientSerializer
-    permission_classes = [IsAdminUserOrReadOnly]
+    serializer_class = serializers.GoalTemplateNutrientSerializer
+    permission_classes = [permissions.IsAdminUserOrReadOnly]
 
 class UserGoalViewSet(viewsets.ModelViewSet):
     queryset = UserGoal.objects.all()
-    serializer_class = UserGoalSerializer
+    serializer_class = serializers.UserGoalSerializer
     permission_classes = [IsAuthenticated]
 
 class UserGoalNutrientViewSet(viewsets.ModelViewSet):
     queryset = UserGoalNutrient.objects.all()
-    serializer_class = UserGoalNutrientSerializer
+    serializer_class = serializers.UserGoalNutrientSerializer
     permission_classes = [IsAuthenticated]

@@ -1,60 +1,32 @@
-# nutrition_backend
-
 ## Database Setup
 
 ### Installing PostgreSQL
 
-The project relies on PostgreSQL as the database management system. If you haven't installed PostgreSQL, follow these steps to do so:
+To install PostreSQL, which we are using four the project database, visit https://www.postgresql.org/download/ and find the installer for your operating system. Once you have it installed, open the PostgreeSQL shell and create a database on your computer using the command `CREATE DATABASE nutrition;`.
 
-  1. Visit the PostgreSQL Downloads page: https://www.postgresql.org/download/
-  2. Choose the appropriate installer for your operating system.
-  3. Follow the installation instructions provided for your platform.
-  4. Open your PostgreSQL shell and create a database for this project. (E.g., `CREATE DATABASE nutrition;`)
+### Environment Variables
 
-### Setting up Environment Variables with .env
+Instead of hardcoding our personal database credentials into the settings.py file in the project backend, use a .env file to hold them. The settings.py file will then reference this file. This .env will be ignored by version control and will thus keep your info private.
 
-To manage sensitive information like database credentials and other configuration variables, we use a .env file. This file is not included in version control and should be kept private.
-
-#### Step 1: Install Required Packages
-
-You will need python-decouple and psycopg2. They should install automatically via the requirements.txt file if you are using a virtual environment. Otherwise install manually:
+If you are using a virtual environment (which you should be), the two following packages should install automatically since they are included in the requirements.txt file. Otherwise install them manually:
 
 - `pip install python-decouple`
 - `pip install psydopg2`
 
-#### Step 2: Create a New .env File
-
-1. Navigate to the root directory of the project.
-2. Create a new file named .env.
-
-#### Step 3: Add Environment Variables
-
-Open the .env file you created and add the following lines:
+Create a new file in the nutrition_backend folder named ".env" and add the following lines to it. Replace myDatabaseName, myUsername, etc. with your own database and login info.
 ```
-DB_NAME=my_database_name
-DB_USER=my_database_user
-DB_PASSWORD=my_database_password
-DB_HOST=my_database_host
-DB_PORT=my_database_port
+DB_NAME=myDatabaseName
+DB_USER=myUsername
+DB_PASSWORD=myPassword
+DB_HOST=databaseHost
+DB_PORT=databasePort
 ```
 
-Replace the placeholders (my_database_name, my_database_user, etc.) with your actual database credentials and configurations.
+### Build the Database, Create a Superuser Account, and Run the Server
 
-#### Step 4: Updating Environment Variables
-
-If any of the configuration values change (e.g., database credentials), update them in the .env file. Make sure not to commit this file to version control.
-
-#### Important Note:
-
-- Never share your .env file publicly or commit it to version control. It contains sensitive information.
-- Ensure that each team member creates their own .env file with their specific credentials.
-
-### Perform Migrations, Create Admin Account, Run Server
-
-Run the following commands from the project root directory to create and apply migrations to your local PostgreSQL database:
-`python manage.py makemigrations` (only required if you have modified a model)
-`python manage.py migrate`
-
-Run `python manage.py createsuperuser` to create a superuser account.
-Run `python manage.py runserver` to start a local server.
-Access the admin interface at http://localhost:8000/admin/
+From the root project folder (nutrition_backend), run these commands:
+`python manage.py makemigrations` (You only need to run this if you have changed a model in the models.py file)
+`python manage.py migrate` (Builds the database)
+`python manage.py createsuperuser`
+`python manage.py runserver`
+You can open the nutriton backend admin page in your browser: http://localhost:8000/admin/.
