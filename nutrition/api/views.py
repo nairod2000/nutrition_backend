@@ -46,6 +46,10 @@ class UserRetrieveUpdateView(RetrieveUpdateAPIView):
     serializer_class = serializers.UserRetrieveUpdateSerializer
     queryset = User.objects.all()
 
+    def get_object(self):
+        # Return the currently authenticated user data
+        return self.request.user
+
     def update(self, request):
         # Get authenticated user
         user = self.request.user
@@ -269,49 +273,54 @@ class GoalNutrientStatusView(APIView):
         user = self.request.user
         activeGoal = user.usergoal_set.filter(isActive=True).first()
 
-        if activeGoal:
-            # Make a list of all the nutrients in the active goal
-            goalNutrients = activeGoal.usergoalnutrient_set.all()
-            
-            # Get everything the user ate today
-            consumedItems = user.consumed_set.filter(consumedAt__date=date.today())
-            
-            # Calculate how many calories have been consumed
-            caloriesConsumed = consumedItems.aggregate(totalCalories=Sum(F('item__calories') * F('portion')))['totalCalories'] or 0
-
-            # Create a list to hold the status of each nutrient and add calories
-            nutrientStatus = [
-                {
-                    "nutrient_id": -1,  # Arbitrary ID for calories
-                    "nutrient_name": "Calories",
-                    "nutrient_unit": "kcal",
-                    "target_value": activeGoal.calories,
-                    "total_consumed": caloriesConsumed,
-                }
-            ]
-
-            for goalNutrient in goalNutrients:
-                # Make a list of of consumed items that contain the current goal nutrient
-                itemsWithNutrient = consumedItems.filter(item__itemnutrient__nutrient=goalNutrient.nutrient)
-
-                # Calculate how much of the current nutrient has been consumed
-                nutrientConsumed = itemsWithNutrient.aggregate(totalNutrient=Sum(F('portion') * F('item__itemnutrient__amount')))['totalNutrient'] or 0
-
-                # Add the status of the current nutrient to the status list
-                nutrientStatus.append({
-                    "nutrient_id": goalNutrient.nutrient.id,
-                    "nutrient_name": goalNutrient.nutrient.name,
-                    "nutrient_unit": goalNutrient.nutrient.unit.abbreviation,
-                    "target_value": goalNutrient.targetValue,
-                    "total_consumed": nutrientConsumed,
-                })
-
-            # Serialize the list of nutrient statuses
-            serializer = serializers.NutrientStatusSerializer(nutrientStatus, many=True)
-
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
+        if not activeGoal:
             return Response({'message': 'No active goal found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Make a list of all the nutrients in the active goal
+        goalNutrients = activeGoal.usergoalnutrient_set.all()
+        
+        # Get everything the user ate today and separate into list of items and combined items
+        consumed = user.consumed_set.filter(consumedAt__date=date.today())
+        consumedItems = consumed.filter(item__isnull=False)
+        consumedCombinedItems = consumed.filter(combinedItem__isnull=False)
+        
+        # Calculate how many calories have been consumed in items and combined items
+        caloriesConsumedItems = consumedItems.aggregate(totalCalories=Sum(F('item__calories') * F('portion')))['totalCalories'] or 0
+        caloriesConsumedCombinedItems = consumedCombinedItems.aggregate(totalCalories=Sum(F('combinedItem__combineditemelement__item__calories') * F('portion')))['totalCalories'] or 0
+
+        # Create a list to hold the status of each nutrient and add calories
+        nutrientStatus = [
+            {
+                "nutrient_id": -1,  # Arbitrary ID for calories
+                "nutrient_name": "Calories",
+                "nutrient_unit": "kcal",
+                "target_value": activeGoal.calories,
+                "total_consumed": caloriesConsumedItems + caloriesConsumedCombinedItems,
+            }
+        ]
+
+        for goalNutrient in goalNutrients:
+            # Make a list of of consumed items and combined items that contain the current goal nutrient
+            itemsWithNutrient = consumedItems.filter(item__itemnutrient__nutrient=goalNutrient.nutrient)
+            combindItemsWithNutrient = consumedCombinedItems.filter(combinedItem__combineditemelement__item__itemnutrient__nutrient=goalNutrient.nutrient)
+
+            # Calculate how much of the current nutrient has been consumed in items and combined items
+            nutrientConsumedItems = itemsWithNutrient.aggregate(totalNutrient=Sum(F('portion') * F('item__itemnutrient__amount')))['totalNutrient'] or 0
+            nutrientConsumedCombinedItems = combindItemsWithNutrient.aggregate(totalNutrient=Sum(F('portion') * F('combinedItem__combineditemelement__item__itemnutrient__amount')))['totalNutrient'] or 0
+
+            # Add the status of the current nutrient to the status list
+            nutrientStatus.append({
+                "nutrient_id": goalNutrient.nutrient.id,
+                "nutrient_name": goalNutrient.nutrient.name,
+                "nutrient_unit": goalNutrient.nutrient.unit.abbreviation,
+                "target_value": goalNutrient.targetValue,
+                "total_consumed": nutrientConsumedItems + nutrientConsumedCombinedItems,
+            })
+
+        # Serialize the list of nutrient statuses
+        serializer = serializers.NutrientStatusSerializer(nutrientStatus, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ConsumedCreateView(CreateAPIView):
