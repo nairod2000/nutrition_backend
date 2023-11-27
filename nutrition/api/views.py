@@ -351,6 +351,7 @@ class UserConsumedItemsView(APIView):
             if consumedItem.item:
                 consumedItemsList.append({
                     "id": consumedItem.id,
+                    "item_id": consumedItem.item.id,
                     "type": "Item",
                     "name": consumedItem.item.name,
                     "portion": consumedItem.portion,
@@ -358,6 +359,7 @@ class UserConsumedItemsView(APIView):
             elif consumedItem.combinedItem:
                 consumedItemsList.append({
                     "id": consumedItem.id,
+                    "item_id": consumedItem.combinedItem.id,
                     "type": "CombinedItem",
                     "name": consumedItem.combinedItem.name,
                     "portion": consumedItem.portion,
@@ -433,12 +435,16 @@ class ItemViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Item.objects.all()
         barcode = self.request.query_params.get('barcode', None)
+        name = self.request.query_params.get('name', None)
         # Check if request contains barcode
-        if barcode:
+        if barcode is not None:
             queryset = queryset.filter(barcode=barcode)
             # Verify an item with the barcode exists
             if not queryset.exists():
                 raise NotFound('No items match this barcode')
+        elif name is not None:
+            queryset = queryset.filter(name__icontains=name)
+
         return queryset
 
 class CombinedItemViewSet(viewsets.ModelViewSet):
