@@ -28,8 +28,8 @@ class User(AbstractUser):
         return self.username
 
 class Unit(models.Model):
-    name = models.CharField(max_length=20, unique=True, null=True, blank=True)
-    abbreviation = models.CharField(max_length=10, unique=True, null=True, blank=True)
+    name = models.CharField(max_length=256, unique=True, null=True, blank=True)
+    abbreviation = models.CharField(max_length=256, unique=True, null=True, blank=True)
     
     def clean(self):
         if not self.name and not self.abbreviation:
