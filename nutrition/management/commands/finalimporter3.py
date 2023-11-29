@@ -44,15 +44,9 @@ def checkUnitsForMatch(unit, unitList):
     return None
 
 def checkNutrientsForMatch(nutrient, nutrientList):
-    nutrient_lower = nutrient.lower()
-    if "vitamin" in nutrient_lower:
-        nutrient_lower = nutrient_lower.replace("-"," ")
-    if nutrient_lower == "proteins":
-        nutrient_lower = "protein"
     for nutrientObj in nutrientList:
-        if nutrientObj.name.lower() == nutrient_lower:
+        if nutrientObj.name == nutrient:
             return nutrientObj
-    return None
 
 
 def read_items(jsonl_file,batch_size=1000):
@@ -122,8 +116,6 @@ def read_items(jsonl_file,batch_size=1000):
             nutrientsDic = data.get('nutrients')
             for nutrient_name in nutrientsDic.keys():
                 #forgot to remove these two from the data cleaning script
-                if nutrient_name == "fruits-vegetables-nuts-estimate-from-ingredients" or nutrient_name == "energy-kcal_serving" or nutrient_name == "energy-kcal":
-                    continue
                 values = nutrientsDic.get(nutrient_name)
                 amountPerServing = values.get('amount_per_serving')
                 unit = values.get('unit')
@@ -138,13 +130,9 @@ def read_items(jsonl_file,batch_size=1000):
                     )
                     units.append(unitObj)
                 #another example of checking for an object and creating it otherwise (sort of defeats the purpose of the generator but oh well)
-                nutrient = checkNutrientsForMatch(nutrient_name, nutrients)
-                if nutrient is None:
-                    nutrient, created = Nutrient.objects.get_or_create(
-                        name=nutrient_name,
-                        unit = unitObj
-                    )
-                    nutrients.append(nutrient)
+                if nutrient_name == "Carbohydrates":
+                    nutrient_name = "Carbohydrate"
+                nutrient = Nutrient.objects.get(name=nutrient_name)
 
                 item_nutrient = ItemNutrient(
                     item=item,  # This will be set after saving items
@@ -168,7 +156,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Define the relative path to JSONL file
         self.stdout.write(self.style.NOTICE('Starting import...'))
-        jsonl_file = os.path.normpath(os.path.join("data", "newData2.jsonl"))
+        jsonl_file = os.path.normpath(os.path.join("data", "fixedData3.jsonl"))
         try:
             counter = 1
             for items, item_nutrients, serving_sizes in read_items(jsonl_file):
