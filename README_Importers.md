@@ -11,7 +11,7 @@ To import data, run the following commands:
 I wrote a script (massagedata.py) that went through the entire jsonl file and wrote the pertinent data for each entry to a new jsonl file
 that conatins only data in english and that also has the data we care about (name,barcodes,serving sizes, nutrients) that file sits at just about
 100+ mb rather than the 40 of the initial file (most of that file size came from all the additional data that was in each entry e.g. the tags and such they use for their search
-algorithm) anyway the massaged data can be downloaded from https://drive.google.com/file/d/1moy3XAczXdWOQWlCNd1CU9OLD4W_d1o7/view?usp=sharing if you want to go through the process of massaging the data yourself do be warned it takes
+algorithm) anyway the massaged data can be downloaded from https://drive.google.com/file/d/1rn6_LdD2xLvHrBkxQhHA4pogoWhCMSR_/view?usp=sharing if you want to go through the process of massaging the data yourself do be warned it takes
 about 6 hours. the new importer takes about 30 minutes
 
 
@@ -25,7 +25,7 @@ python manage.py import_nutrients
 python manage.py import_goal_template
 ```
 ```bash
-python manage.py finalimporter
+python manage.py finalimporter3
 ```
 
 on a side note if you wish to clean the db (wipe out all the existing data) you can run
