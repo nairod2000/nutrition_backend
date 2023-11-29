@@ -67,7 +67,7 @@ class NutrientStatusSerializer(serializers.Serializer):
     nutrient_id = serializers.IntegerField()
     nutrient_name = serializers.CharField()
     nutrient_unit = serializers.CharField(max_length=10)
-    target_value = serializers.DecimalField(max_digits=7, decimal_places=2)
+    target_value = serializers.DecimalField(max_digits=8, decimal_places=2)
     total_consumed = serializers.DecimalField(max_digits=8, decimal_places=2)
 
 # Consume Serializer
@@ -164,9 +164,10 @@ class ServingSizeSerializer(serializers.ModelSerializer):
         return data
 
 class ItemSerializer(serializers.ModelSerializer):
+    isFavorite = serializers.BooleanField(read_only=True)
     class Meta:
         model = Item
-        fields = ["id", "name", "barcode", "calories", "servingSize", "isCustom", "user", "nutrients"]
+        fields = ["id", "name", "barcode", "calories", "servingSize", "isCustom", "user", "nutrients", "isFavorite"]
 
     def validate(self, data):
         calories = data.get('calories')

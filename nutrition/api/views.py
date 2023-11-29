@@ -2,7 +2,7 @@ from datetime import date
 
 from django.contrib import auth
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Exists, OuterRef
 
 from rest_framework import status, viewsets
 from rest_framework.exceptions import ValidationError, NotFound
@@ -433,7 +433,9 @@ class ItemViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Item.objects.all()
+        user = self.request.user
+        queryset = super().get_queryset()
+
         barcode = self.request.query_params.get('barcode', None)
         name = self.request.query_params.get('name', None)
         # Check if request contains barcode
@@ -441,9 +443,13 @@ class ItemViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(barcode=barcode)
             # Verify an item with the barcode exists
             if not queryset.exists():
+                print('getting in here')
                 raise NotFound('No items match this barcode')
         elif name is not None:
-            queryset = queryset.filter(name__icontains=name)
+            # need to limit 
+            queryset = queryset.filter(name__icontains=name).order_by('name')[:10]
+
+        queryset = queryset.annotate(isFavorite=Exists(FavoriteItem.objects.filter(user=user, item=OuterRef('id'))))
 
         return queryset
 

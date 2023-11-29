@@ -28,8 +28,9 @@ class User(AbstractUser):
         return self.username
 
 class Unit(models.Model):
-    name = models.CharField(max_length=20, unique=True, null=True, blank=True)
-    abbreviation = models.CharField(max_length=10, unique=True, null=True, blank=True)
+    # Represents a unit of measurement, such as a gram or fluid ounce.
+    name = models.CharField(max_length=256, unique=True, null=True, blank=True)
+    abbreviation = models.CharField(max_length=256, unique=True, null=True, blank=True)
     
     def clean(self):
         if not self.name and not self.abbreviation:
@@ -42,7 +43,7 @@ class Unit(models.Model):
             return self.abbreviation
     
 class ServingSize(models.Model):
-    amount = models.DecimalField(max_digits=7, decimal_places=2, validators=[validators.MinValueValidator(0.01)])
+    amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[validators.MinValueValidator(0.01)])
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -60,7 +61,7 @@ class Nutrient(models.Model):
 class Item(models.Model):
     name = models.TextField(db_index=True)
     barcode = models.CharField(max_length=50, null=True, blank=True, db_index=True)
-    calories = models.PositiveIntegerField(validators=[validators.MaxValueValidator(100000)])
+    calories = models.PositiveIntegerField()
     servingSize = models.ForeignKey(ServingSize, on_delete=models.CASCADE)
     nutrients = models.ManyToManyField(Nutrient, through='ItemNutrient', related_name='items')
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) # Creator of item (if applicable)
@@ -87,7 +88,7 @@ class Consumed(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, null=True, blank=True)
     combinedItem = models.ForeignKey(CombinedItem, on_delete=models.CASCADE, null=True, blank=True)
     consumedAt = models.DateTimeField(auto_now_add=True)
-    portion = models.DecimalField(max_digits=7, decimal_places=2, validators=[validators.MinValueValidator(0)])
+    portion = models.DecimalField(max_digits=8, decimal_places=2, validators=[validators.MinValueValidator(0)])
 
     def clean(self):
         if not self.item and not self.combinedItem:
@@ -105,7 +106,7 @@ class Consumed(models.Model):
 class CombinedItemElement(models.Model):
     combinedItem = models.ForeignKey(CombinedItem, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    portion = models.DecimalField(max_digits=7, decimal_places=2, validators=[validators.MinValueValidator(0)])
+    portion = models.DecimalField(max_digits=8, decimal_places=2, validators=[validators.MinValueValidator(0)])
 
     def __str__(self):
         return f"Element: {self.item.name} in Combined Item: {self.combinedItem.name}"
@@ -113,7 +114,7 @@ class CombinedItemElement(models.Model):
 class ItemNutrient(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     nutrient = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=7, decimal_places=2, validators=[validators.MinValueValidator(0)])
+    amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[validators.MinValueValidator(0)])
 
     def __str__(self):
         return f"{self.item.name} - {self.nutrient.name}"
@@ -121,7 +122,7 @@ class ItemNutrient(models.Model):
 class ItemBioactive(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
-    amount = models.DecimalField(max_digits=7, decimal_places=2, validators=[validators.MinValueValidator(0)])
+    amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[validators.MinValueValidator(0)])
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -149,7 +150,7 @@ class GoalTemplate(models.Model):
 class GoalTemplateNutrient(models.Model):
     nutrient = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
     template = models.ForeignKey(GoalTemplate, on_delete=models.CASCADE)
-    recommendedValue = models.DecimalField(default=0, max_digits=7, decimal_places=2, validators=[validators.MinValueValidator(0)])
+    recommendedValue = models.DecimalField(default=0, max_digits=8, decimal_places=2, validators=[validators.MinValueValidator(0)])
 
     def __str__(self):
         return f"{self.template.name} - {self.nutrient.name}"
@@ -184,7 +185,7 @@ class UserGoal(models.Model):
 class UserGoalNutrient(models.Model):
     nutrient = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
     goal = models.ForeignKey(UserGoal, on_delete=models.CASCADE)
-    targetValue = models.DecimalField(max_digits=7, decimal_places=2, validators=[validators.MinValueValidator(0)])
+    targetValue = models.DecimalField(max_digits=8, decimal_places=2, validators=[validators.MinValueValidator(0)])
 
     def __str__(self):
         return f"{self.goal.user.username}'s {self.goal.name} Goal - {self.nutrient.name}"
