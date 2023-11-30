@@ -37,5 +37,6 @@ urlpatterns = [
     path('consumed-create/', views.ConsumedCreateView.as_view(), name='consumed-create'),
     path('consumed-items/', views.UserConsumedItemsView.as_view(), name='consumed-items'),
     path('toggle-favorite/<int:item_id>/', views.ToggleFavoriteView.as_view(), name='toggle-favorite'),
-    path('favorites/', views.FavoriteItemIDListView.as_view(), name='favorites')
+    path('favorites/', views.FavoriteItemIDListView.as_view(), name='favorites'),
+    path('item-create/', views.ItemCreateView.as_view(), name='item-create')
 ]

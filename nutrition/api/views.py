@@ -401,6 +401,49 @@ class FavoriteItemIDListView(ListAPIView):
 
         return favorites
 
+class ItemCreateView(CreateAPIView):
+    serializer_class = serializers.ItemCreateSerializer
+
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Create the item
+        item = Item.objects.create(
+            name=serializer.data['name'],
+            calories=serializer.validated_data['calories'],
+            servingSize=ServingSize.objects.create(amount=serializer.validated_data['serving_amount'], unit=serializer.validated_data['serving_unit']),
+            user=self.request.user,
+            isCustom=True
+        )
+
+        # Add each of the item's nutrients
+        createdNutrients = []
+        for id, amount in serializer.data['nutrients'].items():
+            # Verify nutrient exists
+            nutrientToAdd = Nutrient.objects.filter(id=id).first()
+            if not nutrientToAdd:
+                return Response({'error': 'Nutrient does not exist'}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Link the item and the nutrient
+            itemNutrient = ItemNutrient.objects.create(item=item, nutrient=nutrientToAdd, amount=amount)
+            nutrientData = {
+                'id': nutrientToAdd.id,
+                'name': nutrientToAdd.name,
+                'unit': nutrientToAdd.unit.abbreviation,
+                'amount': itemNutrient.amount
+            }
+            createdNutrients.append(nutrientData)
+
+        # Prepare the response
+        createdItem = serializers.ItemSerializer(item)
+        itemAndNutrients = {
+            'item': createdItem.data,
+            'nutrients': createdNutrients
+        }
+
+        return Response(itemAndNutrients, status=status.HTTP_201_CREATED)
+
  
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')

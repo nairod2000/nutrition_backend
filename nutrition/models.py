@@ -28,7 +28,6 @@ class User(AbstractUser):
         return self.username
 
 class Unit(models.Model):
-    # Represents a unit of measurement, such as a gram or fluid ounce.
     name = models.CharField(max_length=256, unique=True, null=True, blank=True)
     abbreviation = models.CharField(max_length=256, unique=True, null=True, blank=True)
     
