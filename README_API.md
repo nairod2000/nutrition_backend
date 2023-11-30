@@ -530,6 +530,59 @@ GET
 ```
 
 
+### Create Item With Nutrients
+
+- **Endpoint:** `/api/item-create/`
+
+**Request:**
+```
+POST
+{
+    "name": "New Food Item",
+    "calories": "100",
+    "serving_amount": "10.5",
+    "serving_unit": 10,
+    "nutrients": {
+        "2": "10.5",
+        "7": "20.0"
+    }
+}
+```
+
+**Responses:**
+```
+{
+    "item": {
+        "id": 204457,
+        "name": "New Food Item",
+        "barcode": null,
+        "calories": 100,
+        "servingSize": 206650,
+        "isCustom": true,
+        "user": 1,
+        "nutrients": [
+            2,
+            7
+        ]
+    },
+    "nutrients": [
+        {
+            "id": 2,
+            "name": "Carbohydrate",
+            "unit": "g",
+            "amount": "10.50"
+        },
+        {
+            "id": 7,
+            "name": "Protein",
+            "unit": "g",
+            "amount": "20.00"
+        }
+    ]
+}
+```
+
+
 ## "Regular" View Set Endpoints
 
 These endpoints are based on the Django REST Framework's ModelViewSet. They offer CRUD operations for each model and access to all model fields. POST, PUT, PATCH, or DELETE requests to some endpoints may be sent only by superusers. The browsable API can be used to find details on available fields. These endpoints can be used via the browsable API at http://localhost:8000/api/ after starting a local server with `python models.py runserver`.

@@ -92,6 +92,29 @@ class ConsumedCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("You may provide either an item or combined item, not both.")
 
         return data
+    
+# Item Serializers
+
+class ItemCreateSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    calories = serializers.DecimalField(max_digits=8, decimal_places=2)
+    serving_amount = serializers.DecimalField(max_digits=8, decimal_places=2)
+    serving_unit = serializers.PrimaryKeyRelatedField(queryset=Unit.objects.all())
+    nutrients = serializers.DictField(child=serializers.DecimalField(max_digits=8, decimal_places=2))
+
+    def validate(self, data):
+        calories = data.get('calories')
+        serving_amount = data.get('serving_amount')
+
+        if calories < 0:
+            raise serializers.ValidationError("Calories must be greater than or equal to 0.")
+
+        if serving_amount < 0:
+            raise serializers.ValidationError("Serving amount must be greater than or equal to 0.")
+        
+        
+
+        return data
 
 # "Regular" Model Serializers
 
