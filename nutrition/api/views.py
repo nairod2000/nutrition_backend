@@ -386,7 +386,7 @@ class ToggleFavoriteView(APIView):
             return Response({'message': 'Item favorited'}, status=status.HTTP_201_CREATED)
         else:
             favoriteItem.delete()
-            return Response({'message': 'Item unfavorited'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'message': 'Item unfavorited'}, status=status.HTTP_200_OK)
 
 
 class FavoriteItemIDListView(ListAPIView):
