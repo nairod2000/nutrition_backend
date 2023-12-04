@@ -658,6 +658,17 @@ These endpoints are based on the Django REST Framework's ModelViewSet. They offe
   - `DELETE`: Delete a specific serving size by ID.
 - **Permissions:** Authenticated users only.
 
+`/api/servingsizes/{id}/` GET response:
+
+```
+{
+    "id": 1,
+    "amount": "50.00",
+    "unit": 3,
+    "unit_abbreviation": "g"
+}
+```
+
 ### Items
 **Endpoint:** `/api/items/`
 - **Methods:**

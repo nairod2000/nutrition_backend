@@ -174,9 +174,11 @@ class NutrientSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ServingSizeSerializer(serializers.ModelSerializer):
+    unit_abbreviation = serializers.CharField(source='unit.abbreviation', max_length=256, read_only=True)
+
     class Meta:
         model = ServingSize
-        fields = '__all__'
+        fields = ['id', 'amount', 'unit', 'unit_abbreviation']
 
     def validate(self, data):
         amount = data.get('amount')
