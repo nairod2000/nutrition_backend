@@ -530,6 +530,50 @@ GET
 ```
 
 
+### Retrieve Item by Name
+
+- **Endpoint:** `/api/items/?name={name}` (no trailing slash `/`)
+
+**Request:**
+```
+GET
+(Leave request body blank; include name in URL)
+```
+
+**Responses:**
+```
+{
+    "count": 10,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": 168356,
+            "name": "Apple Fritter",
+            "barcode": "41512163548",
+            "calories": 450,
+            "servingSize": 169844,
+            "isCustom": false,
+            "user": null,
+            "nutrients": [
+                7,
+                3,
+                22,
+                27,
+                2,
+                4,
+                35,
+                34
+            ],
+            "isFavorite": false
+        }
+        // ... (more items)
+    ]
+}
+```
+This endpoint will search for Items containing all words in the query. Queries with multiple words should have words separated by a space. For example: `/api/items/?name=apple pie`. Do not include a trailing slash `/` at the end of the URL. The query will sort the matching Items found by the length of the item's name (shortest first) then by the number of nutrients related to the Item (most related nutrients first), then it will return the top ten Items in this list.
+
+
 ### Create Item With Nutrients
 
 - **Endpoint:** `/api/item-create/`

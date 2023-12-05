@@ -2,7 +2,7 @@ from datetime import date
 
 from django.contrib import auth
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Sum, F, Exists, OuterRef
+from django.db.models import Count, Exists, F, functions, OuterRef, Sum, Q
 
 from rest_framework import status, viewsets
 from rest_framework.exceptions import ValidationError, NotFound
@@ -486,11 +486,16 @@ class ItemViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(barcode=barcode)
             # Verify an item with the barcode exists
             if not queryset.exists():
-                print('getting in here')
                 raise NotFound('No items match this barcode')
+        # Check if request contains name
         elif name is not None:
-            # need to limit 
-            queryset = queryset.filter(name__icontains=name).order_by('name')[:10]
+            words = name.split()
+            for word in words:
+                queryset = queryset.filter(name__icontains=word)
+            # Verify an item containing the name exists
+            if not queryset.exists():
+                raise NotFound('No matching items')
+            queryset = queryset.annotate(nameLength=functions.Length('name'), nutrientCount=Count('nutrients')).order_by('nameLength', '-nutrientCount')[:10]
 
         queryset = queryset.annotate(isFavorite=Exists(FavoriteItem.objects.filter(user=user, item=OuterRef('id'))))
 
