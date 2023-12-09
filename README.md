@@ -28,5 +28,5 @@ From the root project folder (nutrition_backend), run these commands:
 `python manage.py makemigrations` (You only need to run this if you have changed a model in the models.py file)
 `python manage.py migrate` (Builds the database)
 `python manage.py createsuperuser`
-`python manage.py runserver`
+`python manage.py runserver 0.0.0.0:8000`
 You can open the nutriton backend admin page in your browser: http://localhost:8000/admin/.
