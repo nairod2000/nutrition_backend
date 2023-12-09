@@ -15,7 +15,7 @@ class ResetPasswordEmailSerializer(serializers.Serializer):
 class UserRetrieveUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'age', 'weight', 'height', 'sex', 'is_pregnant', 'is_lactating', 'activity_level', 'diet_goal']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'age', 'weight', 'height', 'sex', 'is_pregnant', 'is_lactating', 'activity_level', 'diet_goal']
         extra_kwargs = {'username': {'required': False}}
 
     def validate(self, data):
