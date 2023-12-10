@@ -119,6 +119,7 @@ GET
 ```
 PUT or PATCH
 {
+    "id": 10,
     "username": "Username",
     "email": "user@example.com",
     "first_name": "FirstName",
@@ -140,6 +141,7 @@ Notes for request:
 **Response (Full or Partial Update):**
 ```
 {
+    "id": 10,
     "username": "Username",
     "email": "user@example.com",
     "first_name": "FirstName",
